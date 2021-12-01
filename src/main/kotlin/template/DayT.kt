@@ -1,10 +1,10 @@
 package template
 
-fun solveA(lines: String): Int {
-    TODO("Not implemented")
+fun solveA(text: String): Int {
+    return 0
 }
 
 
-fun solveB(lines: String): Int {
-    TODO("Not implemented")
+fun solveB(text: String): Int {
+    return 0
 }
