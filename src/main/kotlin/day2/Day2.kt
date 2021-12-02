@@ -16,15 +16,17 @@ fun solveA(text: String): Int {
 
 fun solveB(text: String): Int {
     return parseInput(text)
-        .fold(Triple(0, 0, 0)) { (x, y, a), (direction, distance) ->
+        .fold(SubmarinePosition(0, 0, 0)) { (x, y, aim), (direction, distance) ->
             when (direction) {
-                "forward" -> Triple(x + distance.toInt(), y + a * distance.toInt(), a)
-                "down" -> Triple(x, y, a + distance.toInt())
-                "up" -> Triple(x, y, a - distance.toInt())
+                "forward" -> SubmarinePosition(x + distance.toInt(), y + aim * distance.toInt(), aim)
+                "down" -> SubmarinePosition(x, y, aim + distance.toInt())
+                "up" -> SubmarinePosition(x, y, aim - distance.toInt())
                 else -> throw IllegalArgumentException("Bad input $direction")
             }
         }.let { (x, y, _) -> x * y }
 }
+
+data class SubmarinePosition(val x: Int, val y: Int, val aim: Int)
 
 private fun parseInput(text: String) = text
     .lines()
