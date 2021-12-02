@@ -1,33 +1,31 @@
 package day2
 
+import helper.Point
+
 fun solveA(text: String): Int {
-    var depth = 0
-    var horizontalDistance = 0
-    text.lines().map { it.split(" ") }
-        .forEach { (direction, distance) ->
+    return parseInput(text)
+        .fold(Point(0, 0)) { (x, y), (direction, distance) ->
             when (direction) {
-                "forward" -> horizontalDistance += distance.toInt()
-                "down" -> depth += distance.toInt()
-                "up" -> depth -= distance.toInt()
+                "forward" -> Point(x + distance.toInt(), y)
+                "down" -> Point(x, y + distance.toInt())
+                "up" -> Point(x, y - distance.toInt())
+                else -> throw IllegalArgumentException("Bad input $direction")
             }
-        }
-    return depth * horizontalDistance
+        }.let { (x, y) -> x * y }
 }
 
 fun solveB(text: String): Int {
-    var aim = 0
-    var depth = 0
-    var horizontalDistance = 0
-    text.lines().map { it.split(" ") }
-        .forEach { (direction, distance) ->
+    return parseInput(text)
+        .fold(Triple(0, 0, 0)) { (x, y, a), (direction, distance) ->
             when (direction) {
-                "forward" -> {
-                    horizontalDistance += distance.toInt()
-                    depth += aim * distance.toInt()
-                }
-                "down" -> aim += distance.toInt()
-                "up" -> aim -= distance.toInt()
+                "forward" -> Triple(x + distance.toInt(), y + a * distance.toInt(), a)
+                "down" -> Triple(x, y, a + distance.toInt())
+                "up" -> Triple(x, y, a - distance.toInt())
+                else -> throw IllegalArgumentException("Bad input $direction")
             }
-        }
-    return depth * horizontalDistance
+        }.let { (x, y, _) -> x * y }
 }
+
+private fun parseInput(text: String) = text
+    .lines()
+    .map { it.split(" ") }
