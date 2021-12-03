@@ -1,10 +1,10 @@
 package template
 
-fun solveA(text: String): Int {
+fun solveA(lines: List<String>): Int {
     return 0
 }
 
 
-fun solveB(text: String): Int {
+fun solveB(lines: List<String>): Int {
     return 0
 }

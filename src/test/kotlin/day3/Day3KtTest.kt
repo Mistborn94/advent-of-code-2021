@@ -10,7 +10,7 @@ internal class Day3KtTest {
 
     @Test
     fun sample1() {
-        val text = """|00100
+        val lines = """|00100
             |11110
             |10110
             |10111
@@ -21,22 +21,22 @@ internal class Day3KtTest {
             |10000
             |11001
             |00010
-            |01010""".trimMargin()
+            |01010""".trimMargin().lines()
 
-        assertEquals(198, solveA(text))
-        assertEquals(230, solveB(text))
+        assertEquals(198, solveA(lines))
+        assertEquals(230, solveB(lines))
     }
 
 
     @Test
     fun solve() {
-        val text = readDayFile(day, "input").readText().trim()
+        val lines = readDayFile(day, "input").readText().trim().lines()
 
-        val solveA = solveA(text)
+        val solveA = solveA(lines)
         println("A: $solveA")
         assertEquals(3895776, solveA)
 
-        val solveB = solveB(text)
+        val solveB = solveB(lines)
         println("B: $solveB")
         assertEquals(7928162, solveB)
     }
