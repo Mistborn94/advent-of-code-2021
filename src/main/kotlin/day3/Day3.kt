@@ -1,25 +1,24 @@
 package day3
 
+import kotlin.math.pow
+
 fun solveA(text: String): Int {
     val lines = text.lines()
     val lineCount = lines.size
     val oneCounts = countOnes(lines)
 
-    val gamma = oneCounts.map { if (it >= lineCount / 2) 1 else 0 }.joinToString(separator = "").toInt(2)
-    val epsilon = oneCounts.map { if (it >= lineCount / 2) 0 else 1 }.joinToString(separator = "").toInt(2)
+    val mask = 2.pow(lines[0].length) - 1
+    val gamma = oneCounts.map { if (it >= lineCount - it) 1 else 0 }.reduce { acc, value -> acc * 2 + value }
+    val epsilon = gamma.inv() and mask
 
     return gamma * epsilon
 }
 
-private fun countOnes(lines: List<String>): Array<Int> {
-    val oneCounts = Array(lines[0].length) { 0 }
-
-    lines.forEach { line ->
-        line.forEachIndexed { index, c ->
-            oneCounts[index] += c.digitToInt()
+private fun countOnes(lines: List<String>): List<Int> {
+    return lines.map { line -> line.map { it.digitToInt() } }
+        .reduce { acc, line ->
+            acc.zip(line) { a, b -> a + b }
         }
-    }
-    return oneCounts
 }
 
 fun solveB(text: String): Int {
@@ -41,3 +40,5 @@ private fun findCandidate(lines: List<String>, highBit: Char, lowBit: Char): Int
     }
     return candidates[0].toInt(2)
 }
+
+fun Int.pow(n: Int) = this.toDouble().pow(n).toInt()
