@@ -1,70 +1,66 @@
 package day4
 
-import helper.Point
-
 fun solveA(lines: List<String>): Int {
-    val calledNumbers = lines.first().split(",").map { it.toInt() }.toMutableList()
+    val calledNumbers = lines.first().split(",").map { it.toInt() }.iterator()
+    val boards = buildBoards(lines.subList(2, lines.size))
 
-    val boards = lines.subList(2, lines.size)
-        .filter { it.isNotBlank() }
-        .chunked(5)
-        .map { lists ->
-            buildBoard(lists)
-        }
-
-    var call: Int = 0
+    var call = 0
     while (!boards.any { it.hasWon() }) {
-        call = calledNumbers.removeFirst();
-        boards.forEach { board -> board[call]?.let { it.marked = true } }
+        call = calledNumbers.next()
+        boards.forEach { board -> board.mark(call) }
     }
 
-    val winningBoard = boards.first { it.hasWon() }
-    val unmarkedSum = winningBoard.entries.filter { (key, value) -> !value.marked }
-        .sumOf { (key, value) -> key }
-    return unmarkedSum * call
+    return boards.first { it.hasWon() }.score() * call
 }
 
 fun solveB(lines: List<String>): Int {
-    val calledNumbers = lines.first().split(",").map { it.toInt() }.toMutableList()
+    val calledNumbers = lines.first().split(",").map { it.toInt() }.iterator()
+    val boards = buildBoards(lines.subList(2, lines.size)).toMutableList()
 
-    val boards = lines.subList(2, lines.size)
-        .filter { it.isNotBlank() }
-        .chunked(5)
-        .map { lists ->
-            buildBoard(lists)
-        }.toMutableList()
-
-    var call: Int = 0
+    var call = 0
     while (boards.size > 1) {
-        call = calledNumbers.removeFirst();
-        boards.forEach { board -> board[call]?.let { it.marked = true } }
+        call = calledNumbers.next()
+        boards.forEach { board -> board.mark(call) }
         boards.removeIf { it.hasWon() }
     }
 
     val lastBoard = boards.first()
     while (!lastBoard.hasWon()) {
-        call = calledNumbers.removeFirst();
-        lastBoard[call]?.let { it.marked = true }
+        call = calledNumbers.next();
+        lastBoard.mark(call)
     }
 
-    val unmarkedSum = lastBoard.entries.filter { (key, value) -> !value.marked }
-        .sumOf { (key, value) -> key }
-    return unmarkedSum * call
+    return lastBoard.score() * call
 }
 
-private fun Map<Int, BingoCell>.hasWon(): Boolean {
-    return this.entries.groupBy { (_, value) -> value.point.x }.any { (_, column) -> column.all { it.value.marked } }
-            || this.entries.groupBy { (_, value) -> value.point.y }.any { (_, row) -> row.all { it.value.marked } }
+private fun buildBoards(lines: List<String>) = lines
+    .filter { it.isNotBlank() }
+    .chunked(5)
+    .map(::buildBoard)
 
-}
-
-fun buildBoard(lists: List<String>): Map<Int, BingoCell> {
+fun buildBoard(lists: List<String>): Board {
     return lists.flatMapIndexed { y, row ->
-        row.trim().split("  ", " ").mapIndexed { x, value -> Pair(value.toInt(), BingoCell(Point(x, y))) }
+        row.trim().split("  ", " ").mapIndexed { x, value -> Pair(value.toInt(), BingoCell(x, y)) }
+    }.toMap().let(::Board)
+}
+
+class Board(private val cells: Map<Int, BingoCell>) {
+
+    private val rowMarkCount = mutableMapOf<Int, Int>()
+    private val columnMarkCount = mutableMapOf<Int, Int>()
+
+    fun hasWon(): Boolean = rowMarkCount.any { it.value == 5 } || columnMarkCount.any { it.value == 5 }
+
+    fun mark(number: Int) {
+        cells[number]?.also {
+            it.marked = true
+            rowMarkCount[it.y] = rowMarkCount.getOrDefault(it.y, 0) + 1
+            columnMarkCount[it.x] = columnMarkCount.getOrDefault(it.x, 0) + 1
+        }
     }
-        .toMap()
+
+    fun score(): Int = cells.entries.filter { (_, value) -> !value.marked }
+        .sumOf { (key, _) -> key }
 }
 
-data class BingoCell(val point: Point, var marked: Boolean = false) {
-
-}
+class BingoCell(val x: Int, val y: Int, var marked: Boolean = false)
