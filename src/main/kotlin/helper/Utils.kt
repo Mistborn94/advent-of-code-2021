@@ -54,3 +54,19 @@ tailrec fun greatestCommonDivisor(a: Long, b: Long): Long {
 fun IntArray.mapToInt(transform: (Int) -> Int): IntArray = IntArray(this.size) { transform(this[it]) }
 fun IntArray.mapIndexedToInt(transform: (index: Int, value: Int) -> Int): IntArray =
     IntArray(this.size) { transform(it, this[it]) }
+
+fun <T : Comparable<T>> Iterable<T>.minAndMax(): Pair<T, T> {
+    val iterator = iterator()
+    if (!iterator.hasNext()) throw IllegalArgumentException("Cannot get min and max of empty collection")
+
+    var min = iterator.next()
+    var max = min
+    while (iterator.hasNext()) {
+        val next = iterator.next()
+        when {
+            next < min -> min = next
+            next > max -> max = next
+        }
+    }
+    return min to max
+}
