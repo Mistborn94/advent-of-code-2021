@@ -3,25 +3,28 @@ package day3
 import kotlin.math.pow
 
 fun solveA(lines: List<String>): Int {
-    return lines
+    val gamma = lines
         .map { line -> line.map(Char::digitToInt) }
         .reduce(List<Int>::sumWith)
         .map { if (it >= lines.size - it) 1 else 0 }
         .digitsToInt(2)
-        .let { gamma -> gamma * (gamma.inv() and bitmask(lines.first().length)) }
+
+    return gamma * (gamma.inv() and bitmask(lines.first().length))
 }
 
-fun solveB(lines: List<String>): Int = lines
-    .map { line -> line.map(Char::digitToInt) }
-    .run { calculateRating(1) * calculateRating(0) }
+fun solveB(lines: List<String>): Int {
+    val lineDigits = lines.map { line -> line.map(Char::digitToInt) }
 
-private tailrec fun List<List<Int>>.calculateRating(highBit: Int, index: Int = 0): Int {
-    return if (size == 1) {
-        first().digitsToInt(2)
+    return calculateRating(lineDigits, 1) * calculateRating(lineDigits, 0)
+}
+
+private tailrec fun calculateRating(lists: List<List<Int>>, highBit: Int, index: Int = 0): Int {
+    return if (lists.size == 1) {
+        lists.first().digitsToInt(2)
     } else {
-        val oneCounts = sumOf { it[index] }
-        val comparisonBit = if (oneCounts >= size - oneCounts) highBit else 1 - highBit
-        this.filter { it[index] == comparisonBit }.calculateRating(highBit, index + 1)
+        val oneCounts = lists.sumOf { it[index] }
+        val comparisonBit = if (oneCounts >= lists.size - oneCounts) highBit else 1 - highBit
+        calculateRating(lists.filter { it[index] == comparisonBit }, highBit, index + 1)
     }
 }
 
