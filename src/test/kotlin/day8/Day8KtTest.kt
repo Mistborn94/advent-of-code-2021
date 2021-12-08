@@ -32,6 +32,7 @@ gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
     }
 
     @Test
+//    @RepeatedTest(1000)
     fun solve() {
         val lines = readDayFile(day, "input").readText().trim().lines()
 
