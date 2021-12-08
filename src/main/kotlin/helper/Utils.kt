@@ -5,6 +5,7 @@ import kotlin.math.absoluteValue
 
 fun Iterable<Long>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.product() = reduce { acc, item -> acc * item }
+fun Iterable<Int>.digitsToInt(radix: Int) = reduce { acc, digit -> acc * radix + digit }
 
 fun <T> ArrayList<T>.resize(minimumSize: Int, supplier: () -> T) {
     if (minimumSize < 0) {
@@ -28,11 +29,31 @@ fun <T> List<List<T>>.indexOf(item: T): Point {
 }
 
 val IntArray.abs: Int get() = sumOf { it.absoluteValue }
+fun IntArray.mapToInt(transform: (Int) -> Int): IntArray = IntArray(this.size) { transform(this[it]) }
+fun IntArray.mapIndexedToInt(transform: (index: Int, value: Int) -> Int): IntArray =
+    IntArray(this.size) { transform(it, this[it]) }
 
-fun lowestCommonMultiple(a: Long, b: Long): Long = (a * b) / greatestCommonDivisor(a, b)
+
+fun <T : Comparable<T>> Iterable<T>.minAndMax(): Pair<T, T> {
+    val iterator = iterator()
+    if (!iterator.hasNext()) throw IllegalArgumentException("Cannot get min and max of empty collection")
+
+    var min = iterator.next()
+    var max = min
+    while (iterator.hasNext()) {
+        val next = iterator.next()
+        when {
+            next < min -> min = next
+            next > max -> max = next
+        }
+    }
+    return min to max
+}
+
+fun <K, V> Map<K, V>.pivot() = entries.associate { (key, value) -> value to key }
 
 /**
- * Use the euclidian algorithm to find GCD(A,B)
+ * Use the euclidean algorithm to find GCD(A,B)
  * https://www.khanacademy.org/computing/computer-science/cryptography/modarithmetic/a/the-euclidean-algorithm
  *  - GCD(A,0) = A
  *  - GCD(0,B) = B
@@ -51,22 +72,4 @@ tailrec fun greatestCommonDivisor(a: Long, b: Long): Long {
     }
 }
 
-fun IntArray.mapToInt(transform: (Int) -> Int): IntArray = IntArray(this.size) { transform(this[it]) }
-fun IntArray.mapIndexedToInt(transform: (index: Int, value: Int) -> Int): IntArray =
-    IntArray(this.size) { transform(it, this[it]) }
-
-fun <T : Comparable<T>> Iterable<T>.minAndMax(): Pair<T, T> {
-    val iterator = iterator()
-    if (!iterator.hasNext()) throw IllegalArgumentException("Cannot get min and max of empty collection")
-
-    var min = iterator.next()
-    var max = min
-    while (iterator.hasNext()) {
-        val next = iterator.next()
-        when {
-            next < min -> min = next
-            next > max -> max = next
-        }
-    }
-    return min to max
-}
+fun lowestCommonMultiple(a: Long, b: Long): Long = (a * b) / greatestCommonDivisor(a, b)

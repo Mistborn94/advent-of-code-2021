@@ -1,5 +1,6 @@
 package day3
 
+import helper.digitsToInt
 import kotlin.math.pow
 
 fun solveA(lines: List<String>): Int {
@@ -29,6 +30,5 @@ private tailrec fun calculateRating(lists: List<List<Int>>, highBit: Int, index:
 }
 
 fun List<Int>.sumWith(other: List<Int>) = zip(other, Int::plus)
-fun List<Int>.digitsToInt(radix: Int) = reduce { acc, digit -> acc * radix + digit }
 fun Int.pow(n: Int) = this.toDouble().pow(n).toInt()
 fun bitmask(size: Int) = 2.pow(size) - 1
