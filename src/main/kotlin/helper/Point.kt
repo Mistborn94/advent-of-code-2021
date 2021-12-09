@@ -34,9 +34,9 @@ data class Point(val x: Int, val y: Int) {
         Point(x, y + 1),
         Point(x, y - 1)
     )
+}
 
-    operator fun <E> List<List<E>>.get(point: Point) = this[point.y][point.x]
-    operator fun <E> MutableList<MutableList<E>>.set(point: Point, value: E) {
-        this[point.y][point.x] = value
-    }
+operator fun <E> List<List<E>>.get(point: Point) = this[point.y][point.x]
+operator fun <E> MutableList<MutableList<E>>.set(point: Point, value: E) {
+    this[point.y][point.x] = value
 }
