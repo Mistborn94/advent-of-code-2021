@@ -1,4 +1,4 @@
-package helper
+package helper.point
 
 enum class Direction(val point: Point) {
 

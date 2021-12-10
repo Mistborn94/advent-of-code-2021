@@ -1,6 +1,6 @@
 package day2
 
-import helper.Point
+import helper.point.Point
 
 fun solveA(text: String): Int {
     return parseInput(text)

@@ -1,6 +1,6 @@
 package day5
 
-import helper.Point
+import helper.point.Point
 
 fun solveA(lines: List<String>): Int = solve(lines, false)
 fun solveB(lines: List<String>): Int = solve(lines, true)

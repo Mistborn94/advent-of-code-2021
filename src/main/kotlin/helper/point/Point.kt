@@ -1,4 +1,4 @@
-package helper
+package helper.point
 
 data class Point(val x: Int, val y: Int) {
 
@@ -36,7 +36,13 @@ data class Point(val x: Int, val y: Int) {
     )
 }
 
+operator fun <E> List<List<E>>.contains(point: Point): Boolean = this.isNotEmpty() && point.y in this.indices && point.x in this.first().indices
 operator fun <E> List<List<E>>.get(point: Point) = this[point.y][point.x]
 operator fun <E> MutableList<MutableList<E>>.set(point: Point, value: E) {
     this[point.y][point.x] = value
+}
+
+fun <T> List<List<T>>.indexOf(item: T): Point {
+    val y = this.indexOfFirst { it.contains(item) }
+    return Point(this[y].indexOf(item), y)
 }

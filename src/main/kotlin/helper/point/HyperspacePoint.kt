@@ -1,4 +1,6 @@
-package helper
+package helper.point
+
+import helper.abs
 
 class HyperspacePoint constructor(val parts: IntArray) {
     val size = parts.size

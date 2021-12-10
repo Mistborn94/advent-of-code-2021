@@ -1,6 +1,6 @@
 package helper.collections
 
-import helper.HyperspacePoint
+import helper.point.HyperspacePoint
 
 /**
  * Stores constant-length integer sequences where each element is within certain bounds

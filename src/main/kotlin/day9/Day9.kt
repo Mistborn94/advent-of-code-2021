@@ -1,7 +1,8 @@
 package day9
 
-import helper.Point
-import helper.get
+import helper.point.Point
+import helper.point.contains
+import helper.point.get
 import helper.product
 
 fun solveA(lines: List<String>): Int {
@@ -25,15 +26,13 @@ private fun findLowPoints(cells: List<List<Int>>): List<Point> {
     val yRange = cells.indices
     return xRange.flatMap { x -> yRange.map { y -> Point(x, y) } }
         .filter { point ->
-            point.neighbours().filter { it.x in xRange && it.y in yRange }
+            point.neighbours().filter { it in cells }
                 .all { cells[it] > cells[point] }
         }
 }
 
 fun findBasin(point: Point, cells: List<List<Int>>): Set<Point> {
-    val xRange = cells[0].indices
-    val yRange = cells.indices
-    val neighbours = point.neighbours().filter { it.x in xRange && it.y in yRange && cells[it] != 9 && cells[it] > cells[point] }
+    val neighbours = point.neighbours().filter { it in cells && cells[it] != 9 && cells[it] > cells[point] }
     return mutableSetOf(point).apply {
         addAll(neighbours.flatMap { findBasin(it, cells) })
     }

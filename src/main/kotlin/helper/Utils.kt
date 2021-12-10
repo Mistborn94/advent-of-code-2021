@@ -23,16 +23,10 @@ fun <T> BlockingQueue<T>.drainToList(): List<T> {
     return outputList
 }
 
-fun <T> List<List<T>>.indexOf(item: T): Point {
-    val startingY = this.indexOfFirst { it.contains(item) }
-    return Point(this[startingY].indexOf(item), startingY)
-}
-
 val IntArray.abs: Int get() = sumOf { it.absoluteValue }
 fun IntArray.mapToInt(transform: (Int) -> Int): IntArray = IntArray(this.size) { transform(this[it]) }
 fun IntArray.mapIndexedToInt(transform: (index: Int, value: Int) -> Int): IntArray =
     IntArray(this.size) { transform(it, this[it]) }
-
 
 fun <T : Comparable<T>> Iterable<T>.minAndMax(): Pair<T, T> {
     val iterator = iterator()
