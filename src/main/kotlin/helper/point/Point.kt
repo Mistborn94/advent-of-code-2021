@@ -34,11 +34,18 @@ data class Point(val x: Int, val y: Int) {
         Point(x, y + 1),
         Point(x, y - 1)
     )
+
+    fun diagonalNeighbours() = listOf(
+        Point(x + 1, y + 1),
+        Point(x + 1, y - 1),
+        Point(x - 1, y + 1),
+        Point(x - 1, y - 1)
+    )
 }
 
 operator fun <E> List<List<E>>.contains(point: Point): Boolean = this.isNotEmpty() && point.y in this.indices && point.x in this.first().indices
 operator fun <E> List<List<E>>.get(point: Point) = this[point.y][point.x]
-operator fun <E> MutableList<MutableList<E>>.set(point: Point, value: E) {
+operator fun <E> List<MutableList<E>>.set(point: Point, value: E) {
     this[point.y][point.x] = value
 }
 
