@@ -3,6 +3,7 @@ package day9
 import helper.point.Point
 import helper.point.contains
 import helper.point.get
+import helper.point.points
 import helper.product
 
 fun solveA(lines: List<String>): Int {
@@ -22,9 +23,7 @@ fun solveB(lines: List<String>): Int {
 }
 
 private fun findLowPoints(cells: List<List<Int>>): List<Point> {
-    val xRange = cells[0].indices
-    val yRange = cells.indices
-    return xRange.flatMap { x -> yRange.map { y -> Point(x, y) } }
+    return cells.points()
         .filter { point ->
             point.neighbours().filter { it in cells }
                 .all { cells[it] > cells[point] }

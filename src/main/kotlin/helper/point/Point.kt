@@ -49,6 +49,10 @@ operator fun <E> List<MutableList<E>>.set(point: Point, value: E) {
     this[point.y][point.x] = value
 }
 
+fun <E> List<List<E>>.points() = indices.flatMap { y ->
+    this[y].indices.map { x -> Point(x, y) }
+}
+
 fun <T> List<List<T>>.indexOf(item: T): Point {
     val y = this.indexOfFirst { it.contains(item) }
     return Point(this[y].indexOf(item), y)

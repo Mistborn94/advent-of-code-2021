@@ -1,9 +1,6 @@
 package day11
 
-import helper.point.Point
-import helper.point.contains
-import helper.point.get
-import helper.point.set
+import helper.point.*
 
 
 fun solveA(lines: List<String>): Int {
@@ -16,12 +13,14 @@ private fun runIteration(octopuses: List<MutableList<Int>>): Int {
     val toFlash = mutableSetOf<Point>()
     val flashed = mutableSetOf<Point>()
 
-    for (x in 0 until 10) {
-        for (y in 0 until 10) {
-            val point = Point(x, y)
-            increaseValue(octopuses, point, toFlash)
+    fun increaseEnergy(point: Point) {
+        octopuses[point] += 1
+        if (octopuses[point] > 9) {
+            toFlash.add(point)
         }
     }
+
+    octopuses.points().forEach { increaseEnergy(it) }
 
     while (toFlash.isNotEmpty()) {
         val point = toFlash.first()
@@ -29,14 +28,11 @@ private fun runIteration(octopuses: List<MutableList<Int>>): Int {
         if (flashed.add(point)) {
             (point.neighbours() + point.diagonalNeighbours())
                 .filter { it in octopuses }
-                .forEach { neighbour -> increaseValue(octopuses, neighbour, toFlash) }
-
+                .forEach { increaseEnergy(it) }
         }
     }
-    flashed.forEach { point ->
-        octopuses[point] = 0
-    }
-    return flashed.size
+
+    return flashed.onEach { octopuses[it] = 0 }.size
 }
 
 
@@ -52,9 +48,3 @@ fun solveB(lines: List<String>): Int {
     return step
 }
 
-fun increaseValue(octopuses: List<MutableList<Int>>, point: Point, toFlash: MutableSet<Point>) {
-    octopuses[point] += 1
-    if (octopuses[point] > 9) {
-        toFlash.add(point)
-    }
-}
