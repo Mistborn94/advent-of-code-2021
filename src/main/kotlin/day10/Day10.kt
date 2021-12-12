@@ -39,6 +39,7 @@ fun firstIllegalChar(line: String): Char? {
     return null
 }
 
+val pointsB = mapOf(')' to 1, ']' to 2, '}' to 3, '>' to 4)
 fun completeLine(line: String): List<Char>? {
     val stack = Stack<Char>()
 
@@ -55,6 +56,9 @@ fun completeLine(line: String): List<Char>? {
     return stack.mapNotNull { pairs[it] }
 }
 
+//The stack needs to be reversed to get the characters in the correct order - so we use foldRight instead of fold
+fun calcPoints(it: List<Char>): Long = it.foldRight(0) { c, acc -> acc * 5 + (pointsB[c] ?: 0) }
+
 fun solveB(lines: List<String>): Long {
     val allScores = lines.mapNotNull { completeLine(it) }
         .map { calcPoints(it) }
@@ -63,7 +67,3 @@ fun solveB(lines: List<String>): Long {
     return allScores[allScores.size / 2]
 }
 
-val pointsB = mapOf(')' to 1, ']' to 2, '}' to 3, '>' to 4)
-
-//The stack needs to be reversed to get the characters in the correct order - so we use foldRight instead of fold
-fun calcPoints(it: List<Char>): Long = it.foldRight(0) { c, acc -> acc * 5 + (pointsB[c] ?: 0) }
