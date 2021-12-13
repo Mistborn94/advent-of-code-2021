@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -20,7 +22,13 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
     dependsOn("cleanTest")
-    testLogging.showStandardStreams = true
+    testLogging {
+        events(FAILED, STANDARD_ERROR, SKIPPED, PASSED)
+        exceptionFormat = FULL
+        showStandardStreams = true
+        showExceptions = true
+        showCauses = true
+    }
 }
 
 tasks.withType<KotlinCompile> {
