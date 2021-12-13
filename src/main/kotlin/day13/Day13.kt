@@ -10,43 +10,18 @@ fun solveA(lines: List<String>): Int {
         .map { it.split(",") }
         .map { (x, y) -> Point(x.toInt(), y.toInt()) }
         .toSet()
+
     val fold = lines[blank + 1].let {
         val (axis, value) = foldPattern.matchEntire(it)!!.destructured
         Fold(axis[0], value.toInt())
     }
 
-    return processFold(points, fold).size
-}
-
-fun processFold(points: Set<Point>, fold: Fold): Set<Point> {
-    return if (fold.axis == 'x') {
-        points.map { foldLeft(it, fold) }.toSet()
-    } else {
-        points.map { foldUp(it, fold) }.toSet()
-    }
-}
-
-private fun foldUp(it: Point, fold: Fold): Point {
-    return if (it.y <= fold.value) {
-        it
-    } else {
-        val newY = fold.value - (it.y - fold.value)
-        Point(it.x, newY)
-    }
-}
-
-private fun foldLeft(it: Point, fold: Fold): Point {
-    return if (it.x <= fold.value) {
-        it
-    } else {
-        val newX = fold.value - (it.x - fold.value)
-        Point(newX, it.y)
-    }
+    return fold.foldPoints(points).size
 }
 
 fun solveB(lines: List<String>): String {
     val blank = lines.indexOf("")
-    val points = lines.subList(0, blank)
+    val initialPoints = lines.subList(0, blank)
         .map { it.split(",") }
         .map { (x, y) -> Point(x.toInt(), y.toInt()) }
         .toSet()
@@ -56,7 +31,7 @@ fun solveB(lines: List<String>): String {
         Fold(axis[0], value.toInt())
     }
 
-    val finalPoints = folds.fold(points) { points, fold -> processFold(points, fold) }
+    val finalPoints = folds.fold(initialPoints) { points, fold -> fold.foldPoints(points) }
 
     return printPoints(finalPoints)
 }
@@ -75,4 +50,29 @@ private fun printPoints(finalPoints: Set<Point>): String {
     }
 }
 
-data class Fold(val axis: Char, val value: Int)
+data class Fold(val axis: Char, val value: Int) {
+
+    fun foldPoints(points: Set<Point>): Set<Point> {
+        return if (axis == 'x') {
+            points.map { this.foldLeft(it) }.toSet()
+        } else {
+            points.map { this.foldUp(it) }.toSet()
+        }
+    }
+
+    private fun foldUp(point: Point): Point {
+        return if (point.y <= value) {
+            point
+        } else {
+            Point(point.x, 2 * value - point.y)
+        }
+    }
+
+    private fun foldLeft(point: Point): Point {
+        return if (point.x <= value) {
+            point
+        } else {
+            Point(2 * value - point.x, point.y)
+        }
+    }
+}
