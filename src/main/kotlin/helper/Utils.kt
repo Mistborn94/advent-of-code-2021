@@ -6,6 +6,7 @@ import kotlin.math.absoluteValue
 fun Iterable<Long>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.digitsToInt(radix: Int) = reduce { acc, digit -> acc * radix + digit }
+fun <R, K, T> Iterable<Pair<K, T>>.accumulateToMap(initialValue: R, accumulator: (R, Pair<K, T>) -> R): Map<K, R> = groupingBy { (key, _) -> key }.fold(initialValue, accumulator)
 
 fun <T> ArrayList<T>.resize(minimumSize: Int, supplier: () -> T) {
     if (minimumSize < 0) {
