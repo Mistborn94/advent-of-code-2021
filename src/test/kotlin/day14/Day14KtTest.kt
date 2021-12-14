@@ -16,14 +16,6 @@ internal class Day14KtTest {
         assertEquals(2188189693529, solve(lines, 40))
     }
 
-    //    @Tes/t
-    fun sample2() {
-        val lines = readDayFile(day, "sample2.in").readText().trim().lines()
-
-        assertEquals(0, solve(lines, 10))
-        assertEquals(0, solve(lines, 40))
-    }
-
     @Test
     fun solve() {
         val lines = readDayFile(day, "input").readText().trim().lines()
@@ -34,6 +26,6 @@ internal class Day14KtTest {
 
         val solveB = solve(lines, 40)
         println("B: $solveB")
-        assertEquals(0, solveB)
+        assertEquals(3420801168962, solveB)
     }
 }
