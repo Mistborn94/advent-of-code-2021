@@ -1,9 +1,9 @@
 package day15
 
+import helper.graph.findShortestPath
 import helper.point.Point
 import helper.point.contains
 import helper.point.get
-import java.util.*
 
 typealias NumberGrid = List<List<Int>>
 
@@ -26,30 +26,16 @@ fun solveB(lines: List<String>): Int {
 }
 
 private fun search(numbers: NumberGrid): Int {
-    val start = Point(0, 0)
     val end = Point(numbers[0].lastIndex, numbers.lastIndex)
+    return findShortestPath(
+        start = Point(0, 0),
+        end = end,
 
-    val toVisit = PriorityQueue(listOf(ScoredPoint(start, 0, heuristic(start, end))))
-    val seenPoints: MutableMap<Point, Int> = mutableMapOf(start to 0)
-
-    while (!seenPoints.containsKey(end)) {
-        val current = toVisit.remove()
-        val nextPoints = current.point.neighbours()
-            .filter { it in numbers && it !in seenPoints }
-            .map { point -> ScoredPoint(point, current.score + numbers[point], heuristic(point, end)) }
-
-        toVisit.addAll(nextPoints)
-        seenPoints.putAll(nextPoints.associate { it.point to it.score })
-    }
-
-    return seenPoints[end]!!
+        neighbours = { point -> point.neighbours().filter { it in numbers } },
+        cost = { _, next -> numbers[next] },
+        heuristic = { point -> (end - point).abs() },
+    ).getScore(end)
 }
-
-data class ScoredPoint(val point: Point, val score: Int, val heuristic: Int) : Comparable<ScoredPoint> {
-    override fun compareTo(other: ScoredPoint): Int = (score + heuristic).compareTo(other.score + heuristic)
-}
-
-private fun heuristic(current: Point, end: Point) = (end - current).abs()
 
 private fun parseNumbers(lines: List<String>): NumberGrid = lines.map { it.toCharArray().map { c -> c.digitToInt() } }
 private fun increaseByOne(nums: NumberGrid) = nums.map { line -> line.map { it.mod(9) + 1 } }
