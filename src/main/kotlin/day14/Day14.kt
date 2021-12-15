@@ -1,6 +1,5 @@
 package day14
 
-import helper.accumulateToMap
 import helper.minAndMax
 
 fun solve(lines: List<String>, iterations: Int): Long {
@@ -8,35 +7,45 @@ fun solve(lines: List<String>, iterations: Int): Long {
     val rules = lines.subList(2, lines.size)
         .map { it.split(" -> ") }
         .map { (pattern, insert) -> InsertionRule(pattern[0], pattern[1], insert[0]) }
+        .associateBy { Pair(it.first, it.second) }
 
-    val pairs = template.zipWithNext()
+    val initialPairs = template.zipWithNext()
         .groupingBy { it }
         .eachCount()
         .mapValues { (_, value) -> value.toLong() }
-        .toMutableMap()
 
-    repeat(iterations) {
-        rules.map { rule -> rule to (pairs[rule.key] ?: 0) }
-            .filter { (_, applyCount) -> applyCount > 0 }
-            .forEach { (rule, applyCount) ->
-                pairs.compute(rule.key) { _, value -> (value ?: 0) - applyCount }
-                pairs.compute(rule.patternA to rule.insert) { _, value -> (value ?: 0) + applyCount }
-                pairs.compute(rule.insert to rule.patternB) { _, value -> (value ?: 0) + applyCount }
+    val polymerPairs = (0 until iterations).fold(initialPairs) { pairs, _ ->
+        buildMap {
+            pairs.forEach { (key, count) ->
+                val rule = rules[key]
+                if (rule == null) {
+                    incrementValue(this, key, count)
+                } else {
+                    incrementValue(this, rule.first to rule.insert, count)
+                    incrementValue(this, rule.insert to rule.second, count)
+                }
             }
+        }
     }
 
-    val destructuredPairs = pairs.flatMap { (key, value) -> listOf(key.first to value, key.second to value) }
-    val counts = (destructuredPairs + (template.first() to 1L) + (template.last() to 1L))
-        .accumulateToMap(0L) { acc, pair -> acc + pair.second }
-        .mapValues { (_, value) -> value / 2 }
+    val counts = buildMap<Char, Long> {
+        put(template.first(), 1)
+        put(template.last(), 1)
+        polymerPairs.forEach { (pair, count) ->
+            incrementValue(this, pair.first, count)
+            incrementValue(this, pair.second, count)
+        }
+    }.mapValues { (_, value) -> value / 2 }
 
     val (min, max) = counts.values.minAndMax()
 
     return max - min
 }
 
-data class InsertionRule(val patternA: Char, val patternB: Char, val insert: Char) {
-    val key = Pair(patternA, patternB)
+private fun <K> incrementValue(map: MutableMap<K, Long>, key: K, count: Long) {
+    map[key] = (map[key] ?: 0) + count
+}
 
-    override fun toString(): String = "$patternA$patternB -> $insert"
+data class InsertionRule(val first: Char, val second: Char, val insert: Char) {
+    override fun toString(): String = "$first$second -> $insert"
 }
