@@ -19,11 +19,21 @@ inline fun <K> findShortestPath(start: K, end: K, neighbours: (K) -> Iterable<K>
         seenPoints.putAll(nextPoints.associate { it.vertex to SeenVertex(it.score, currentVertex) })
     }
 
-    return GraphSearchResult(seenPoints)
+    return GraphSearchResult(start, end, seenPoints)
 }
 
-class GraphSearchResult<K>(private val result: Map<K, SeenVertex<K>>) {
-    fun getScore(vertex: K) = result[vertex]?.score ?: throw IllegalStateException("Result for $vertex not available")
+class GraphSearchResult<K>(val start: K, val end: K, private val result: Map<K, SeenVertex<K>>) {
+    fun getScore(vertex: K = end) = result[vertex]?.score ?: throw IllegalStateException("Result for $vertex not available")
+
+    tailrec fun getPath(endVertex: K = end, pathEnd: List<K> = emptyList()): List<K> {
+        val previous = result[endVertex]?.prev
+
+        return if (previous == null) {
+            listOf(endVertex) + pathEnd
+        } else {
+            getPath(previous, listOf(endVertex) + pathEnd)
+        }
+    }
 }
 
 data class SeenVertex<K>(val score: Int, val prev: K?)

@@ -27,14 +27,16 @@ fun solveB(lines: List<String>): Int {
 
 private fun search(numbers: NumberGrid): Int {
     val end = Point(numbers[0].lastIndex, numbers.lastIndex)
-    return findShortestPath(
+    val shortestPath = findShortestPath(
         start = Point(0, 0),
         end = end,
 
         neighbours = { point -> point.neighbours().filter { it in numbers } },
         cost = { _, next -> numbers[next] },
         heuristic = { point -> (end - point).abs() },
-    ).getScore(end)
+    )
+
+    return shortestPath.getScore()
 }
 
 private fun parseNumbers(lines: List<String>): NumberGrid = lines.map { it.toCharArray().map { c -> c.digitToInt() } }
