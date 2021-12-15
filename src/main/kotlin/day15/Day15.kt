@@ -28,33 +28,31 @@ fun solveB(lines: List<String>): Int {
 private fun search(numbers: NumberGrid): Int {
     val start = Point(0, 0)
     val end = Point(numbers[0].lastIndex, numbers.lastIndex)
-    val paths = PriorityQueue<Path>()
-    var current = Path(0, start, (end - start).abs())
 
-    val bestPaths: MutableMap<Point, Int> = mutableMapOf(start to 0)
-    while (current.end != end) {
-        val newPaths = current.end.neighbours()
-            .filter { it in numbers }
-            .map { point -> buildNewPath(current, numbers, point, end) }
-            .filter { it.score < (bestPaths[it.end] ?: Int.MAX_VALUE) }
+    val toVisit = PriorityQueue(listOf(ScoredPoint(start, 0, heuristic(start, end))))
+    val seenPoints: MutableMap<Point, Int> = mutableMapOf(start to 0)
 
-        paths.addAll(newPaths)
-        bestPaths.putAll(newPaths.associate { it.end to it.score })
-        current = paths.remove()
+    while (!seenPoints.containsKey(end)) {
+        val current = toVisit.remove()
+        val nextPoints = current.point.neighbours()
+            .filter { it in numbers && it !in seenPoints }
+            .map { point -> ScoredPoint(point, current.score + numbers[point], heuristic(point, end)) }
+
+        toVisit.addAll(nextPoints)
+        seenPoints.putAll(nextPoints.associate { it.point to it.score })
     }
 
-    return current.score
+    return seenPoints[end]!!
 }
 
-data class Path(val score: Int, val end: Point, val heuristic: Int) : Comparable<Path> {
-    override fun compareTo(other: Path): Int = (score + heuristic).compareTo(other.score + heuristic)
+data class ScoredPoint(val point: Point, val score: Int, val heuristic: Int) : Comparable<ScoredPoint> {
+    override fun compareTo(other: ScoredPoint): Int = (score + heuristic).compareTo(other.score + heuristic)
 }
 
-private fun buildNewPath(current: Path, numbers: NumberGrid, next: Point, end: Point) =
-    Path(current.score + numbers[next], next, (end - next).abs())
+private fun heuristic(current: Point, end: Point) = (end - current).abs()
 
 private fun parseNumbers(lines: List<String>): NumberGrid = lines.map { it.toCharArray().map { c -> c.digitToInt() } }
-private fun increaseByOne(nums: NumberGrid) = nums.map { line -> line.map { (it.mod(9)) + 1 } }
+private fun increaseByOne(nums: NumberGrid) = nums.map { line -> line.map { it.mod(9) + 1 } }
 private fun combineHorizontal(blocks: List<NumberGrid>) = blocks.first().indices.map { row -> createRow(row, blocks) }
 private fun createRow(rowIndex: Int, blocks: List<NumberGrid>) = blocks.map { it[rowIndex] }.reduce { acc, list -> acc + list }
 private fun combineVertical(rows: List<NumberGrid>) = rows.reduce(NumberGrid::plus)
