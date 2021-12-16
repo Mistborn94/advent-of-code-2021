@@ -5,7 +5,12 @@ import java.util.*
 /**
  * Implements A* search to find the shortest path between two vertices
  */
-inline fun <K> findShortestPath(start: K, end: K, neighbours: (K) -> Iterable<K>, cost: (K, K) -> Int, heuristic: (K) -> Int = { 0 }): GraphSearchResult<K> {
+inline fun <K> findShortestPath(
+    start: K, end: K,
+    crossinline neighbours: (K) -> Iterable<K>,
+    crossinline cost: (K, K) -> Int,
+    crossinline heuristic: (K) -> Int = { 0 }
+): GraphSearchResult<K> {
     val toVisit = PriorityQueue(listOf(ScoredVertex(start, 0, heuristic(start))))
     val seenPoints: MutableMap<K, SeenVertex<K>> = mutableMapOf(start to SeenVertex(0, null))
 
