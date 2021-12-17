@@ -9,6 +9,8 @@ fun Iterable<Long>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.digitsToInt(radix: Int) = reduce { acc, digit -> acc * radix + digit }
 fun Iterable<Int>.digitsToLong(radix: Int): Long = fold(0L) { acc, digit -> acc * radix + digit }
+fun <E> MutableList<E>.removeFirstN(count: Int): List<E> = (0 until count).map { removeFirst() }
+
 fun <T> ArrayList<T>.resize(minimumSize: Int, supplier: () -> T) {
     if (minimumSize < 0) {
         throw IllegalArgumentException("Negative sizes not allowed")

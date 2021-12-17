@@ -1,10 +1,7 @@
 package day16
 
 import day16.Packet.OperatorPacket
-import helper.digitsToInt
-import helper.digitsToLong
-import helper.product
-import helper.toBinaryDigits
+import helper.*
 
 
 /**
@@ -50,9 +47,9 @@ private fun parsePacket(binaryData: MutableList<Int>): Packet {
     if (typeId == 4) {
         val bits = mutableListOf<Int>()
         do {
-            val removeFirst5 = binaryData.removeFirstN(5)
-            bits.addAll(removeFirst5.subList(1, removeFirst5.size))
-        } while (removeFirst5[0] != 0)
+            val chunk = binaryData.removeFirstN(5)
+            bits.addAll(chunk.subList(1, chunk.size))
+        } while (chunk[0] != 0)
         return Packet.ValuePacket(version, bits.digitsToLong(2))
     } else {
         val lengthType = binaryData.removeFirstN(1)[0]
@@ -78,10 +75,6 @@ private fun parsePacket(binaryData: MutableList<Int>): Packet {
     }
 }
 
-private fun <E> MutableList<E>.removeFirstN(count: Int): List<E> {
-    return (0 until count).map { removeFirst() }
-}
-
 sealed class Packet {
     abstract fun versionSum(): Int
 
@@ -91,7 +84,7 @@ sealed class Packet {
     class ValuePacket(override val version: Int, override val value: Long) : Packet() {
         override fun versionSum(): Int = version
 
-        override fun toString(): String = "value $value"
+        override fun toString(): String = "$value"
     }
 
     class OperatorPacket(override val version: Int, private val typeId: Int, private val innerPackets: List<Packet>) : Packet() {
@@ -110,7 +103,7 @@ sealed class Packet {
                 }
             }
 
-        override fun toString(): String = name() + innerPackets.joinToString(separator = ",", prefix = " [", postfix = "]")
+        override fun toString(): String = name() + innerPackets.joinToString(separator = ", ", prefix = "(", postfix = ")")
 
         private fun name() = when (typeId) {
             0 -> "sum"

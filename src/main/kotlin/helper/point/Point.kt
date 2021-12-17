@@ -41,6 +41,10 @@ data class Point(val x: Int, val y: Int) {
         Point(x - 1, y + 1),
         Point(x - 1, y - 1)
     )
+
+    companion object {
+        val ZERO = Point(0, 0)
+    }
 }
 
 operator fun <E> List<List<E>>.contains(point: Point): Boolean = this.isNotEmpty() && point.y in this.indices && point.x in this.first().indices
