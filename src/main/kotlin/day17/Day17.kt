@@ -1,6 +1,7 @@
 package day17
 
 import helper.point.Point
+import kotlin.math.abs
 import kotlin.math.max
 
 val pattern = """target area: x=(\d+)..(\d+), y=(-?\d+)..(-?\d+)""".toRegex()
@@ -13,7 +14,7 @@ fun solveA(line: String): Int {
 
     return yVelocityUpwards.asSequence()
         .map { solveY(Point(0, it), targetY) }
-        .filter { (landed, _) -> landed } //+ runSequence(yVelocityDownwards, targetY))
+        .filter { (landed, _) -> landed }
         .maxOf { (_, highY) -> highY }
 }
 
@@ -59,11 +60,12 @@ fun solveB(line: String): Int {
     val targetX = x1..x2
     val targetY = y1..y2
 
-    val searchRange = -500 until 500
+    val ySearchRange = y1..abs(y1)
+    val xSearchRange = 0..x2
 
-    return searchRange.asSequence()
+    return ySearchRange.asSequence()
         .filter { solveY(Point(0, it), targetY).first }
-        .flatMap { y -> searchRange.map { x -> Point(x, y) } }
+        .flatMap { y -> xSearchRange.map { x -> Point(x, y) } }
         .filter { solveBoth(it, targetX, targetY) }
         .count()
 }
