@@ -23,26 +23,20 @@ internal class Day18KtTest {
         assertEquals("[[[[0,9],2],3],4]", parseAndReduce("[[[[[9,8],1],2],3],4]"))
         assertEquals("[7,[6,[5,[7,0]]]]", parseAndReduce("[7,[6,[5,[4,[3,2]]]]]"))
         assertEquals("[[6,[5,[7,0]]],3]", parseAndReduce("[[6,[5,[4,[3,2]]]],1]"))
+        assertEquals("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]", parseAndReduce("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]"))
+        assertEquals("[[3,[2,[8,0]]],[9,[5,[7,0]]]]", parseAndReduce("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]"))
         assertEquals("[0,[5,5]]", PairFish(ValueFish(0), ValueFish(10)).reduce().toString())
         assertEquals("[0,[5,6]]", PairFish(ValueFish(0), ValueFish(11)).reduce().toString())
         assertEquals("[0,[6,6]]", PairFish(ValueFish(0), ValueFish(12)).reduce().toString())
-        assertEquals("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]", parseAndReduce("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]"))
 
-        assertEquals("[[[[7,8],[6,6]],[[6,0],[7,7]]],[[[7,8],[8,8]],[[7,9],[0,6]]]]", parseAndReduce("[[[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]],[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]]"))
+        assertEquals("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]", SnailFish.parse("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]").reduce().toString())
+
+        assertEquals("[[[[7,8],[6,6]],[[6,0],[7,7]]],[[[7,8],[8,8]],[[7,9],[0,6]]]]", SnailFish.parse("[[[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]],[[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]]]").reduce().toString())
         assertEquals(3993, magnitude("[[[[7,8],[6,6]],[[6,0],[7,7]]],[[[7,8],[8,8]],[[7,9],[0,6]]]]"))
     }
 
     private fun magnitude(line: String) = SnailFish.parse(line).magnitude()
-
-    private fun parseAndReduce(line: String) = SnailFish.parse(line).reduce().toString()
-
-    //    @Test
-    fun sample2() {
-        val lines = readDayFile(day, "sample2.in").readText().trim().lines()
-
-        assertEquals(0, solveA(lines))
-        assertEquals(0, solveB(lines))
-    }
+    private fun parseAndReduce(line: String) = SnailFish.parse(line).reduceOnce().toString()
 
     @Test
     fun solve() {

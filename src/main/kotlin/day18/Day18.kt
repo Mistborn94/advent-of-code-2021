@@ -17,82 +17,87 @@ fun solveB(lines: List<String>): Int {
 
 sealed class SnailFish {
 
-    abstract var parent: PairFish?
+    abstract fun inOrderTraverse(currentDepth: Int = 0): List<Pair<SnailFish, Int>>
+    abstract fun magnitude(): Int
+    abstract fun copyWithReplacements(replacements: Map<SnailFish, SnailFish>): SnailFish
+    operator fun plus(other: SnailFish): SnailFish = PairFish(this, other).reduce()
 
-    class PairFish(var left: SnailFish, var right: SnailFish) : SnailFish() {
+    fun reduce(): SnailFish {
+        var tree = this
+        do {
+            val old = tree
+            tree = tree.reduceOnce()
+        } while (old != tree)
+        return tree
+    }
 
-        init {
-            left.parent = this
-            right.parent = this
+    fun reduceOnce(): SnailFish {
+        val list = inOrderTraverse()
+        val deeplyNestedIndex = list.indexOfFirst { (fish, depth) -> fish is PairFish && depth >= 4 }
+        if (deeplyNestedIndex != -1) {
+            return doExplode(list, deeplyNestedIndex)
+        } else {
+            val largeNumberNode = list.firstOrNull { (fish, _) -> fish is ValueFish && fish.value >= 10 }?.first
+            if (largeNumberNode != null) {
+                return doSplit(largeNumberNode as ValueFish)
+            }
+        }
+        return this
+    }
+
+    private fun doExplode(list: List<Pair<SnailFish, Int>>, deeplyNestedIndex: Int): SnailFish {
+        val deeplyNestedNode = list[deeplyNestedIndex].first as PairFish
+        val leftNode = list.subList(0, deeplyNestedIndex - 1).lastOrNull { (fish, _) -> fish is ValueFish }?.first as ValueFish?
+        val rightNode = list.subList(deeplyNestedIndex + 2, list.size).firstOrNull { (fish, _) -> fish is ValueFish }?.first as ValueFish?
+
+        val leftValue = (deeplyNestedNode.left as ValueFish).value
+        val rightValue = (deeplyNestedNode.right as ValueFish).value
+        val replacements = buildMap {
+            put(deeplyNestedNode, ValueFish(0))
+            leftNode?.let { put(it, ValueFish(it.value + leftValue)) }
+            rightNode?.let<ValueFish, Unit> { put(it, ValueFish(it.value + rightValue)) }
+        }
+        return copyWithReplacements(replacements)
+    }
+
+    private fun doSplit(largeValueNode: ValueFish): SnailFish {
+        val newNode = PairFish(ValueFish(largeValueNode.value / 2), ValueFish((largeValueNode.value + 1) / 2))
+        return copyWithReplacements(mapOf(largeValueNode to newNode))
+    }
+
+    class PairFish(val left: SnailFish, val right: SnailFish) : SnailFish() {
+        override fun copyWithReplacements(replacements: Map<SnailFish, SnailFish>): SnailFish {
+            return replacements[this] ?: replaceChildren(replacements)
         }
 
-        override var parent: PairFish? = null
-        override fun copy(): PairFish = PairFish(this.left.copy(), this.right.copy())
-        override fun infixTraverse(currentDepth: Int): List<Pair<SnailFish, Int>> = left.infixTraverse(currentDepth + 1) + listOf(this to currentDepth) + right.infixTraverse(currentDepth + 1)
+        private fun replaceChildren(replacements: Map<SnailFish, SnailFish>): PairFish {
+            val leftReplacement = left.copyWithReplacements(replacements)
+            val rightReplacement = right.copyWithReplacements(replacements)
+            return if (left == leftReplacement && right == rightReplacement) {
+                this
+            } else {
+                PairFish(leftReplacement, rightReplacement)
+            }
+        }
+
+        override fun inOrderTraverse(currentDepth: Int): List<Pair<SnailFish, Int>> {
+            return buildList {
+                addAll(left.inOrderTraverse(currentDepth + 1))
+                add(this@PairFish to currentDepth)
+                addAll(right.inOrderTraverse(currentDepth + 1))
+            }
+        }
+
         override fun magnitude(): Int = 3 * left.magnitude() + 2 * right.magnitude()
         override fun toString(): String = "[$left,$right]"
     }
 
-    class ValueFish(var value: Int) : SnailFish() {
-        override var parent: PairFish? = null
-        override fun copy(): ValueFish = ValueFish(this.value)
-        override fun infixTraverse(currentDepth: Int): List<Pair<SnailFish, Int>> = listOf(this to currentDepth)
+    class ValueFish(val value: Int) : SnailFish() {
+        override fun inOrderTraverse(currentDepth: Int) = listOf(this to currentDepth)
         override fun magnitude(): Int = value
         override fun toString() = value.toString()
+        override fun copyWithReplacements(replacements: Map<SnailFish, SnailFish>): SnailFish = replacements[this] ?: this
     }
-
-    operator fun plus(other: SnailFish): SnailFish {
-        return PairFish(this, other).reduce()
-    }
-
-    fun reduce(): SnailFish {
-        val copy = this.copy()
-        do {
-            val traversedList = copy.infixTraverse()
-            val deeplyNestedIndex = traversedList.indexOfFirst { (fish, depth) -> depth >= 4 && fish is PairFish }
-            val largeNumberIndex = traversedList.indexOfFirst { (fish, _) -> fish is ValueFish && fish.value >= 10 }
-            if (deeplyNestedIndex != -1) {
-                doExplode(traversedList, deeplyNestedIndex)
-            } else if (largeNumberIndex != -1) {
-                doSplit(traversedList, largeNumberIndex)
-            }
-        } while (deeplyNestedIndex != -1 || largeNumberIndex != -1)
-        return copy
-    }
-
-    private fun doExplode(traversedFish: List<Pair<SnailFish, Int>>, deeplyNestedIndex: Int) {
-        val deeplyNestedNode = traversedFish[deeplyNestedIndex].first as PairFish
-        val leftNode = traversedFish.subList(0, deeplyNestedIndex - 1).lastOrNull { (fish, _) -> fish is ValueFish }
-        val rightNode = traversedFish.subList(deeplyNestedIndex + 2, traversedFish.size).firstOrNull { (fish, _) -> fish is ValueFish }
-
-        val leftValue = (deeplyNestedNode.left as ValueFish).value
-        val rightValue = (deeplyNestedNode.right as ValueFish).value
-
-        (leftNode?.first as ValueFish?)?.apply { value += leftValue }
-        (rightNode?.first as ValueFish?)?.apply { value += rightValue }
-        deeplyNestedNode.replaceWith(ValueFish(0))
-    }
-
-    private fun doSplit(traversedList: List<Pair<SnailFish, Int>>, largeNumberIndex: Int) {
-        val largeValueNode = traversedList[largeNumberIndex].first as ValueFish
-        val newNode = PairFish(ValueFish(largeValueNode.value / 2), ValueFish((largeValueNode.value + 1) / 2))
-        largeValueNode.replaceWith(newNode)
-    }
-
-    protected fun replaceWith(new: SnailFish) {
-        parent?.let { parent ->
-            when (this) {
-                parent.left -> parent.left = new
-                parent.right -> parent.right = new
-                else -> throw IllegalArgumentException("Can't do replace, original is not a child")
-            }
-            new.parent = parent
-        }
-    }
-
-    abstract fun infixTraverse(currentDepth: Int = 0): List<Pair<SnailFish, Int>>
-    abstract fun copy(): SnailFish
-    abstract fun magnitude(): Int
 
     companion object {
         fun parse(line: String): SnailFish {
