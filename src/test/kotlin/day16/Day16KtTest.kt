@@ -31,11 +31,11 @@ internal class Day16KtTest {
         val lines = readDayFile(day, "input").readText().trim()
 
         val solveA = solveA(lines)
-        println("A: $solveA")
+//        println("A: $solveA")
         assertEquals(965, solveA)
 
         val solveB = solveB(lines)
-        println("B: $solveB")
+//        println("B: $solveB")
         assertEquals(116672213160, solveB)
     }
 }

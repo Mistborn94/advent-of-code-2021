@@ -2,8 +2,16 @@ package helper
 
 import java.util.concurrent.BlockingQueue
 import kotlin.math.absoluteValue
+import kotlin.math.pow
 
-fun Int.toBinaryDigits(bitLength: Int): List<Int> = toString(2).padStart(bitLength, '0').takeLast(bitLength).map { it.digitToInt() }
+fun Int.toBinaryDigits(bitLength: Int): List<Int> = (bitLength - 1 downTo 0).map { bit ->
+    val power = 2.pow(bit)
+    val nextPower = power * 2
+
+    (this@toBinaryDigits % nextPower) / power
+}
+
+fun Int.pow(n: Int) = this.toDouble().pow(n).toInt()
 
 fun Iterable<Long>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.product() = reduce { acc, item -> acc * item }

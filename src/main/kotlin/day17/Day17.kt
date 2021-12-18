@@ -36,8 +36,10 @@ fun solveBoth(startVelocity: Point, targetX: IntRange, targetY: IntRange): Boole
     var currentPosition = Point.ZERO
     var currentVelocity = startVelocity
 
-    while (currentPosition.x < targetX.last && currentPosition.y > targetY.first
-        && !(currentPosition.x in targetX && currentPosition.y in targetY)
+    //x target is positive and x keeps increasing
+    //y target is negative and y keeps decreasing
+    while (!(currentPosition.x in targetX && currentPosition.y in targetY)
+        && (currentPosition.x < targetX.last && currentPosition.y > targetY.first)
     ) {
         currentPosition += currentVelocity
 

@@ -2,6 +2,7 @@ package day16
 
 import day16.Packet.OperatorPacket
 import helper.*
+import java.util.*
 
 
 /**
@@ -26,20 +27,20 @@ import helper.*
  *      * If the length type ID is 1, then the next 11 bits are a number that represents the number of sub-packets immediately contained by this packet.
  */
 fun solveA(line: String): Int {
-    val binaryData = hexToBinaryDigits(line).toMutableList()
-    val rootPacket = parsePacket(binaryData)
+    val binaryData = hexToBinaryDigits(line)
+    val rootPacket = parsePacket(LinkedList(binaryData))
     return rootPacket.versionSum()
 }
 
 fun solveB(line: String): Long {
-    val binaryData = hexToBinaryDigits(line).toMutableList()
-    val rootPacket = parsePacket(binaryData)
+    val binaryData = hexToBinaryDigits(line)
+    val rootPacket = parsePacket(LinkedList(binaryData))
     return rootPacket.value
 }
 
-private fun hexToBinaryDigits(string: String) = string.flatMap { it.digitToInt(16).toBinaryDigits(4) }
+private fun hexToBinaryDigits(string: String) = string.flatMapTo(LinkedList()) { it.digitToInt(16).toBinaryDigits(4) }
 
-private fun parsePacket(binaryData: MutableList<Int>): Packet {
+private fun parsePacket(binaryData: LinkedList<Int>): Packet {
 
     val version = binaryData.removeFirstN(3).digitsToInt(2)
     val typeId = binaryData.removeFirstN(3).digitsToInt(2)
@@ -56,8 +57,7 @@ private fun parsePacket(binaryData: MutableList<Int>): Packet {
 
         if (lengthType == 0) {
             val totalLength = binaryData.removeFirstN(15).digitsToInt(2)
-            val bits = binaryData.removeFirstN(totalLength)
-                .toMutableList()
+            val bits = LinkedList(binaryData.removeFirstN(totalLength))
 
             val parsedPackets = mutableListOf<Packet>()
             while (bits.isNotEmpty()) {

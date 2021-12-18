@@ -1,7 +1,7 @@
 package day3
 
 import helper.digitsToInt
-import kotlin.math.pow
+import helper.pow
 
 fun solveA(lines: List<String>): Int {
     val gamma = lines
@@ -30,5 +30,4 @@ private tailrec fun calculateRating(lists: List<List<Int>>, highBit: Int, index:
 }
 
 fun List<Int>.sumWith(other: List<Int>) = zip(other, Int::plus)
-fun Int.pow(n: Int) = this.toDouble().pow(n).toInt()
 fun bitmask(size: Int) = 2.pow(size) - 1
