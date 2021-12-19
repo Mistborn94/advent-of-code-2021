@@ -1,6 +1,7 @@
 package day19
 
 import helper.point.HyperspacePoint
+import java.util.*
 
 typealias Point = HyperspacePoint
 
@@ -27,34 +28,26 @@ private fun solve(text: String): Pair<Map<Int, Set<Point>>, List<Point>> {
         .map { transformForAllOrientations(it, allOrientations) }
 
     val scannerPositions = Array<Point?>(scannerBeacons.size) { null }
-    val scannerOrientations = Array<Orientation?>(scannerBeacons.size) { null }
     scannerPositions[0] = Point(intArrayOf(0, 0, 0))
-    scannerOrientations[0] = Orientation(Axis.XP, Axis.YP, Axis.ZP)
 
-    //New Algorithm to try
-    //Adjust each scanner (except 0) for all 24 orientations
-    //Find constant differences between all points for every scanner
-    //Work form there
+    val solvedScannersQueue: Queue<Int> = LinkedList(listOf(0))
     while (unknownScanners.isNotEmpty()) {
-        val removed = unknownScanners.removeIf { scannerId ->
-            val thisScanner = scannerBeacons[scannerId];
+        val solvedScannerIndex = solvedScannersQueue.remove()
+        unknownScanners.removeIf { scannerId ->
+            val thisScanner = scannerBeacons[scannerId]
             val transformedPoints = transformedAdjustedScanners[scannerId - 1]
-            val solution = solvedScannersAdjusted.values.firstNotNullOfOrNull { solvedScanner -> trySolveScanner(transformedPoints, solvedScanner) }
+            val solution = trySolveScanner(transformedPoints, solvedScannersAdjusted[solvedScannerIndex]!!)
 
             if (solution != null) {
                 val orientation = solution.first
                 val offset = solution.second
                 val finalPoints = thisScanner.map { orientation.transformPoint(it) - offset }.toSet()
-                scannerOrientations[scannerId] = orientation
                 scannerPositions[scannerId] = HyperspacePoint.zero(3) - offset
                 solvedScanners[scannerId] = finalPoints
                 solvedScannersAdjusted[scannerId] = adjustPoints(finalPoints)
+                solvedScannersQueue.add(scannerId)
             }
             solution != null
-        }
-
-        if (!removed && unknownScanners.isNotEmpty()) {
-            throw IllegalStateException("infinite loop probably")
         }
     }
     return solvedScanners to scannerPositions.filterNotNull()
@@ -62,8 +55,8 @@ private fun solve(text: String): Pair<Map<Int, Set<Point>>, List<Point>> {
 
 fun trySolveScanner(transformedPoints: Map<Orientation, Map<Point, Set<Point>>>, solvedScanner: Map<Point, Set<Point>>): Pair<Orientation, Point>? {
     return transformedPoints.entries.firstNotNullOfOrNull { (orientation, points) ->
-        val thisPoints = points.keys
-        val otherPoints = solvedScanner.keys
+        val thisPoints = points.keys.take(points.size - 11)
+        val otherPoints = solvedScanner.keys.take(solvedScanner.size - 11)
 
         val firstMatchingPair = thisPoints.flatMap { a -> otherPoints.map { b -> a to b } }
             .firstOrNull { (a, b) -> intersectCount(points[a]!!, solvedScanner[b]!!) >= 12 }
