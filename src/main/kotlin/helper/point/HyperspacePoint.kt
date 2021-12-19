@@ -1,9 +1,14 @@
 package helper.point
 
 import helper.abs
+import kotlin.math.abs
 
 class HyperspacePoint constructor(val parts: IntArray) {
     val size = parts.size
+
+    val x get() = parts[0]
+    val y get() = parts[1]
+    val z get() = parts[2]
 
     val neighbours: List<HyperspacePoint>
         get() = neighbourOffsets(size - 1)
@@ -12,6 +17,7 @@ class HyperspacePoint constructor(val parts: IntArray) {
             .toList()
 
     operator fun get(i: Int) = parts[i]
+    fun abs() = parts.sumOf { abs(it) }
 
     operator fun plus(other: HyperspacePoint) =
         HyperspacePoint(IntArray(minOf(size, other.size)) { parts[it] + other.parts[it] })
