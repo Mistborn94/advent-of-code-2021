@@ -18,7 +18,10 @@ fun Iterable<Int>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.digitsToInt(radix: Int) = reduce { acc, digit -> acc * radix + digit }
 fun Iterable<Int>.digitsToLong(radix: Int): Long = fold(0L) { acc, digit -> acc * radix + digit }
 fun <E> MutableList<E>.removeFirstN(count: Int): List<E> = (0 until count).map { removeFirst() }
+
 fun <A, B> Iterable<A>.cartesianProduct(other: Iterable<B>): List<Pair<A, B>> = flatMap { a -> other.map { b -> a to b } }
+fun <A, B, R> Iterable<A>.cartesianProduct(other: Iterable<B>, transform: (A, B) -> R): List<R> = flatMap { a -> other.map { b -> transform(a, b) } }
+
 fun <A, B> Sequence<A>.cartesianProduct(other: Sequence<B>): Sequence<Pair<A, B>> = flatMap { a -> other.map { b -> a to b } }
 fun <A, B, R> Sequence<A>.cartesianProduct(other: Sequence<B>, transform: (A, B) -> R): Sequence<R> = flatMap { a -> other.map { b -> transform(a, b) } }
 

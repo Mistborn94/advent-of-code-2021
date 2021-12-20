@@ -1,7 +1,71 @@
 package day19
 
+import helper.cartesianProduct
 import java.util.*
 import kotlin.math.abs
+
+fun solveA(text: String): Int {
+    val solvedScanners = solve(text)
+
+    return solvedScanners.values.flatMap { it.second }.toSet().size
+}
+
+fun solveB(text: String): Int {
+    val positions = solve(text).values.map { it.first }
+
+    return positions.cartesianProduct(positions) { a, b -> (a - b).abs() }.maxOrNull()!!
+}
+
+val allOrientations = Axis.values().flatMap { it.orientations() }
+val zeroPoint = Point3(0, 0, 0)
+
+private fun solve(text: String): Map<Int, Pair<Point3, Collection<Point3>>> {
+    val scannerBeacons = text.split("\n\n")
+        .map { value -> value.split("\n").drop(1).map { line -> buildPoint(line) } }
+
+    val solvedScanners: MutableMap<Int, Pair<Point3, Collection<Point3>>> = mutableMapOf(0 to (zeroPoint to scannerBeacons[0]))
+    val rotatedScanners = scannerBeacons.drop(1)
+        .map { points -> allOrientations.associateWith { orientation -> rotateAll(orientation, points) } }
+
+    val solvedScannersQueue = LinkedList(listOf(0))
+    val unknownScanners = (1 until scannerBeacons.size).toMutableList()
+    while (unknownScanners.isNotEmpty()) {
+        val solvedScannerIndex = solvedScannersQueue.remove()
+        unknownScanners.removeIf { scannerId ->
+            val thisScanner = scannerBeacons[scannerId]
+            val solution = trySolveScanner(rotatedScanners[scannerId - 1], solvedScanners[solvedScannerIndex]!!.second)
+
+            if (solution != null) {
+                val (orientation, position) = solution
+                solvedScanners[scannerId] = position to thisScanner.map { orientation.rotate(it) + position }.toSet()
+                solvedScannersQueue.add(scannerId)
+            }
+            solution != null
+        }
+    }
+    return solvedScanners
+}
+
+fun buildPoint(it: String): Point3 {
+    val (x, y, z) = it.trim()
+        .split(",")
+        .map { it.toInt() }
+    return Point3(x, y, z)
+}
+
+fun rotateAll(orientation: Orientation, points: Collection<Point3>) = points.map { point -> orientation.rotate(point) }
+
+fun trySolveScanner(thisScanner: Map<Orientation, Collection<Point3>>, solvedScanner: Collection<Point3>): Pair<Orientation, Point3>? {
+    return thisScanner.entries.firstNotNullOfOrNull { (orientation, beacons) ->
+        val position = beacons.cartesianProduct(solvedScanner) { a, b -> b - a }
+            .groupingBy { it }
+            .eachCount()
+            .entries
+            .firstOrNull { (_, value) -> value >= 12 }?.key
+
+        if (position == null) null else orientation to position
+    }
+}
 
 data class Point3(val x: Int, val y: Int, val z: Int) {
     operator fun minus(other: Point3) = Point3(x - other.x, y - other.y, z - other.z)
@@ -10,80 +74,8 @@ data class Point3(val x: Int, val y: Int, val z: Int) {
     fun abs() = abs(x) + abs(y) + abs(z)
 }
 
-fun solveA(text: String): Int {
-    val (solvedScanners, _) = solve(text)
-
-    return solvedScanners.values.flatten().toSet().size
-}
-
-private fun solve(text: String): Pair<Map<Int, Set<Point3>>, List<Point3>> {
-    val zeroPoint = Point3(0, 0, 0)
-    val scannerBeacons = text.split("\n\n")
-        .map { value -> value.split("\n").drop(1).map { line -> buildPoint(line) }.toSet() }
-
-    val scannerZero = scannerBeacons[0]
-
-    val solvedScanners: MutableMap<Int, Set<Point3>> = mutableMapOf(0 to scannerZero)
-    val solvedScannersAdjusted: MutableMap<Int, Map<Point3, Set<Point3>>> = mutableMapOf(0 to adjustPoints(scannerZero))
-    val allOrientations = Axis.values().flatMap { it.orientations() }
-
-    val transformedAdjustedScanners = scannerBeacons.drop(1)
-        .map { transformForAllOrientations(it, allOrientations) }
-
-    val scannerPositions = Array<Point3?>(scannerBeacons.size) { null }
-    scannerPositions[0] = zeroPoint
-
-    val solvedScannersQueue = LinkedList(listOf(0))
-    val unknownScanners = (1 until scannerBeacons.size).toMutableList()
-    while (scannerPositions.any { it == null }) {
-        val solvedScannerIndex = solvedScannersQueue.remove()
-        unknownScanners.removeIf { scannerId ->
-            val thisScanner = scannerBeacons[scannerId]
-            val transformedPoints = transformedAdjustedScanners[scannerId - 1]
-            val solution = trySolveScanner(transformedPoints, solvedScannersAdjusted[solvedScannerIndex]!!)
-
-            if (solution != null) {
-                val orientation = solution.first
-                val offset = solution.second
-                val finalPoints = thisScanner.map { orientation.transformPoint(it) - offset }.toSet()
-                scannerPositions[scannerId] = zeroPoint - offset
-                solvedScanners[scannerId] = finalPoints
-                solvedScannersAdjusted[scannerId] = adjustPoints(finalPoints)
-                solvedScannersQueue.add(scannerId)
-            }
-            solution != null
-        }
-    }
-    return solvedScanners to scannerPositions.filterNotNull()
-}
-
-fun trySolveScanner(transformedPoints: Map<Orientation, Map<Point3, Set<Point3>>>, solvedScanner: Map<Point3, Set<Point3>>): Pair<Orientation, Point3>? {
-    return transformedPoints.entries.firstNotNullOfOrNull { (orientation, points) ->
-        val thisPoints = points.keys.take(points.size - 11)
-        val otherPoints = solvedScanner.keys.take(solvedScanner.size - 11)
-
-        val firstMatchingPair = thisPoints.flatMap { a -> otherPoints.map { b -> a to b } }
-            .firstOrNull { (a, b) -> intersectCount(points[a]!!, solvedScanner[b]!!) >= 12 }
-
-        if (firstMatchingPair == null) null else orientation to firstMatchingPair.first - firstMatchingPair.second
-    }
-}
-
-fun intersectCount(a: Set<Point3>, b: Set<Point3>): Int = a.count { it in b }
-
-fun transformForAllOrientations(points: Set<Point3>, allOrientations: List<Orientation>): Map<Orientation, Map<Point3, Set<Point3>>> {
-    return allOrientations.associateWith { orientation ->
-        adjustPoints(points.map { point -> orientation.transformPoint(point) })
-    }
-}
-
-private fun adjustPoints(allPoints: Collection<Point3>): Map<Point3, Set<Point3>> = allPoints.associateWith { startingPoint ->
-    allPoints.map { it - startingPoint }.toSet()
-}
-
 data class Orientation(val x: Axis, val y: Axis, val z: Axis) {
-
-    fun transformPoint(point: Point3) = Point3(x.getValue(point), y.getValue(point), z.getValue(point))
+    fun rotate(point: Point3) = Point3(x.getValue(point), y.getValue(point), z.getValue(point))
 }
 
 enum class Axis {
@@ -144,20 +136,4 @@ enum class Axis {
 
     abstract fun getValue(point: Point3): Int
     abstract fun orientations(): List<Orientation>
-}
-
-fun buildPoint(it: String): Point3 {
-    val (x, y, z) = it.trim().split(",")
-        .map { it.toInt() }
-    return Point3(x, y, z)
-}
-
-fun solveB(text: String): Int {
-    val (_, positions) = solve(text)
-
-    return positions.maxOf { a ->
-        positions.maxOf { b ->
-            (b - a).abs()
-        }
-    }
 }
