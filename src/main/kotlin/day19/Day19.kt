@@ -1,37 +1,41 @@
 package day19
 
-import helper.point.HyperspacePoint
 import java.util.*
+import kotlin.math.abs
 
-typealias Point = HyperspacePoint
+data class Point3(val x: Int, val y: Int, val z: Int) {
+    operator fun minus(other: Point3) = Point3(x - other.x, y - other.y, z - other.z)
+    operator fun plus(other: Point3) = Point3(x + other.x, y + other.y, z + other.z)
 
+    fun abs() = abs(x) + abs(y) + abs(z)
+}
 
 fun solveA(text: String): Int {
-
     val (solvedScanners, _) = solve(text)
 
     return solvedScanners.values.flatten().toSet().size
 }
 
-private fun solve(text: String): Pair<Map<Int, Set<Point>>, List<Point>> {
+private fun solve(text: String): Pair<Map<Int, Set<Point3>>, List<Point3>> {
+    val zeroPoint = Point3(0, 0, 0)
     val scannerBeacons = text.split("\n\n")
         .map { value -> value.split("\n").drop(1).map { line -> buildPoint(line) }.toSet() }
 
     val scannerZero = scannerBeacons[0]
 
-    val solvedScanners: MutableMap<Int, Set<Point>> = mutableMapOf(0 to scannerZero)
-    val solvedScannersAdjusted: MutableMap<Int, Map<Point, Set<Point>>> = mutableMapOf(0 to adjustPoints(scannerZero))
-    val unknownScanners = (1 until scannerBeacons.size).toMutableSet()
+    val solvedScanners: MutableMap<Int, Set<Point3>> = mutableMapOf(0 to scannerZero)
+    val solvedScannersAdjusted: MutableMap<Int, Map<Point3, Set<Point3>>> = mutableMapOf(0 to adjustPoints(scannerZero))
     val allOrientations = Axis.values().flatMap { it.orientations() }
 
     val transformedAdjustedScanners = scannerBeacons.drop(1)
         .map { transformForAllOrientations(it, allOrientations) }
 
-    val scannerPositions = Array<Point?>(scannerBeacons.size) { null }
-    scannerPositions[0] = Point(intArrayOf(0, 0, 0))
+    val scannerPositions = Array<Point3?>(scannerBeacons.size) { null }
+    scannerPositions[0] = zeroPoint
 
-    val solvedScannersQueue: Queue<Int> = LinkedList(listOf(0))
-    while (unknownScanners.isNotEmpty()) {
+    val solvedScannersQueue = LinkedList(listOf(0))
+    val unknownScanners = (1 until scannerBeacons.size).toMutableList()
+    while (scannerPositions.any { it == null }) {
         val solvedScannerIndex = solvedScannersQueue.remove()
         unknownScanners.removeIf { scannerId ->
             val thisScanner = scannerBeacons[scannerId]
@@ -42,7 +46,7 @@ private fun solve(text: String): Pair<Map<Int, Set<Point>>, List<Point>> {
                 val orientation = solution.first
                 val offset = solution.second
                 val finalPoints = thisScanner.map { orientation.transformPoint(it) - offset }.toSet()
-                scannerPositions[scannerId] = HyperspacePoint.zero(3) - offset
+                scannerPositions[scannerId] = zeroPoint - offset
                 solvedScanners[scannerId] = finalPoints
                 solvedScannersAdjusted[scannerId] = adjustPoints(finalPoints)
                 solvedScannersQueue.add(scannerId)
@@ -53,7 +57,7 @@ private fun solve(text: String): Pair<Map<Int, Set<Point>>, List<Point>> {
     return solvedScanners to scannerPositions.filterNotNull()
 }
 
-fun trySolveScanner(transformedPoints: Map<Orientation, Map<Point, Set<Point>>>, solvedScanner: Map<Point, Set<Point>>): Pair<Orientation, Point>? {
+fun trySolveScanner(transformedPoints: Map<Orientation, Map<Point3, Set<Point3>>>, solvedScanner: Map<Point3, Set<Point3>>): Pair<Orientation, Point3>? {
     return transformedPoints.entries.firstNotNullOfOrNull { (orientation, points) ->
         val thisPoints = points.keys.take(points.size - 11)
         val otherPoints = solvedScanner.keys.take(solvedScanner.size - 11)
@@ -65,26 +69,26 @@ fun trySolveScanner(transformedPoints: Map<Orientation, Map<Point, Set<Point>>>,
     }
 }
 
-fun intersectCount(a: Set<Point>, b: Set<Point>): Int = a.count { it in b }
+fun intersectCount(a: Set<Point3>, b: Set<Point3>): Int = a.count { it in b }
 
-fun transformForAllOrientations(points: Set<Point>, allOrientations: List<Orientation>): Map<Orientation, Map<Point, Set<Point>>> {
+fun transformForAllOrientations(points: Set<Point3>, allOrientations: List<Orientation>): Map<Orientation, Map<Point3, Set<Point3>>> {
     return allOrientations.associateWith { orientation ->
         adjustPoints(points.map { point -> orientation.transformPoint(point) })
     }
 }
 
-private fun adjustPoints(allPoints: Collection<Point>): Map<Point, Set<Point>> = allPoints.associateWith { startingPoint ->
+private fun adjustPoints(allPoints: Collection<Point3>): Map<Point3, Set<Point3>> = allPoints.associateWith { startingPoint ->
     allPoints.map { it - startingPoint }.toSet()
 }
 
 data class Orientation(val x: Axis, val y: Axis, val z: Axis) {
 
-    fun transformPoint(point: Point) = Point.of(x.getValue(point), y.getValue(point), z.getValue(point))
+    fun transformPoint(point: Point3) = Point3(x.getValue(point), y.getValue(point), z.getValue(point))
 }
 
 enum class Axis {
     XP {
-        override fun getValue(point: Point) = point.x
+        override fun getValue(point: Point3) = point.x
         override fun orientations(): List<Orientation> = listOf(
             Orientation(ZN, YP, this),
             Orientation(YN, ZN, this),
@@ -93,7 +97,7 @@ enum class Axis {
         )
     },
     XN {
-        override fun getValue(point: Point) = -point.x
+        override fun getValue(point: Point3) = -point.x
         override fun orientations(): List<Orientation> = listOf(
             Orientation(YP, ZN, this),
             Orientation(ZN, YN, this),
@@ -102,7 +106,7 @@ enum class Axis {
         )
     },
     YP {
-        override fun getValue(point: Point) = point.y
+        override fun getValue(point: Point3) = point.y
         override fun orientations(): List<Orientation> = listOf(
             Orientation(XP, ZN, this),
             Orientation(ZN, XN, this),
@@ -111,7 +115,7 @@ enum class Axis {
         )
     },
     YN {
-        override fun getValue(point: Point) = -point.y
+        override fun getValue(point: Point3) = -point.y
         override fun orientations(): List<Orientation> = listOf(
             Orientation(XN, ZN, this),
             Orientation(ZN, XP, this),
@@ -120,7 +124,7 @@ enum class Axis {
         )
     },
     ZN {
-        override fun getValue(point: Point) = -point.z
+        override fun getValue(point: Point3) = -point.z
         override fun orientations(): List<Orientation> = listOf(
             Orientation(XN, YP, this),
             Orientation(YP, XP, this),
@@ -129,7 +133,7 @@ enum class Axis {
         )
     },
     ZP {
-        override fun getValue(point: Point) = point.z
+        override fun getValue(point: Point3) = point.z
         override fun orientations(): List<Orientation> = listOf(
             Orientation(XP, YP, this),
             Orientation(YN, XP, this),
@@ -138,15 +142,14 @@ enum class Axis {
         )
     };
 
-    abstract fun getValue(point: Point): Int
+    abstract fun getValue(point: Point3): Int
     abstract fun orientations(): List<Orientation>
 }
 
-fun buildPoint(it: String): Point {
-    return Point(it.trim().split(",")
+fun buildPoint(it: String): Point3 {
+    val (x, y, z) = it.trim().split(",")
         .map { it.toInt() }
-        .toIntArray()
-    )
+    return Point3(x, y, z)
 }
 
 fun solveB(text: String): Int {
