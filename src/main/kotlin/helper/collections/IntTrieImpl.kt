@@ -11,6 +11,7 @@ interface IntTrie {
     val upperBounds: IntArray
 
     fun count(): Int
+    fun countInArea(area: Array<IntRange>): Int
     fun countWithNeighbours(location: IntArray): Int
     fun add(location: IntArray)
     fun add(location: HyperspacePoint) {
@@ -19,6 +20,11 @@ interface IntTrie {
 
     fun addAll(locations: Collection<HyperspacePoint>) {
         locations.forEach(this::add)
+    }
+
+    fun remove(location: IntArray)
+    fun removeAll(locations: List<HyperspacePoint>) {
+        locations.forEach { this.remove(it.parts) }
     }
 
     fun contains(location: IntArray): Boolean
@@ -46,6 +52,7 @@ private sealed class TrieNode {
 
     abstract fun count(): Int
     abstract fun countWithNeighbours(location: IntArray): Int
+    abstract fun countInArea(area: Array<IntRange>): Int
 
     class InnerNode(override val lowerBounds: IntArray, override val upperBounds: IntArray, val dimension: Int) :
         TrieNode(), IntTrie {
@@ -70,6 +77,21 @@ private sealed class TrieNode {
             }
         }
 
+        override fun remove(location: IntArray) {
+            val nodeIndex = location[dimension] - lowerBound
+
+            if (dimension == location.lastIndex) {
+                nodes[nodeIndex] = EmptyNode
+            } else {
+                val trieNode = nodes[nodeIndex]
+                if (trieNode is InnerNode) {
+                    trieNode.remove(location)
+                } else {
+                    nodes[nodeIndex] = EmptyNode
+                }
+            }
+        }
+
         override fun contains(location: IntArray): Boolean {
             val nodeIndex = location[dimension] - lowerBound
 
@@ -85,6 +107,11 @@ private sealed class TrieNode {
         }
 
         override fun count(): Int = nodes.sumOf { it.count() }
+        override fun countInArea(area: Array<IntRange>): Int {
+            val lowerIndex = area[dimension].first - lowerBound
+            val upperIndex = area[dimension].last - lowerBound
+            return nodes.filterIndexed { i, _ -> i in lowerIndex..upperIndex }.sumOf { it.countInArea(area) }
+        }
 
         override fun countWithNeighbours(location: IntArray): Int {
             val nodeIndex = location[dimension] - lowerBound
@@ -113,13 +140,16 @@ private sealed class TrieNode {
             }
     }
 
+
     object EmptyNode : TrieNode() {
         override fun count(): Int = 0
         override fun countWithNeighbours(location: IntArray): Int = 0
+        override fun countInArea(area: Array<IntRange>) = 0
     }
 
     object LeafNode : TrieNode() {
         override fun count(): Int = 1
         override fun countWithNeighbours(location: IntArray) = 1
+        override fun countInArea(area: Array<IntRange>): Int = 1
     }
 }
