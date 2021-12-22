@@ -1,66 +1,100 @@
 package day22
 
-import helper.cartesianProduct
-import helper.point.HyperspacePoint
 import kotlin.math.max
 import kotlin.math.min
 
+private val IntRange.size: Int
+    get() = max(0, last - first + 1)
 val pattern = "(on|off) x=([-0-9]+)..([-0-9]+),y=([-0-9]+)..([-0-9]+),z=([-0-9]+)..([-0-9]+)".toRegex()
 
-fun solveA(lines: List<String>): Int {
+fun solveA(lines: List<String>): Long {
+    val steps = lines.map { parseLine(it) }
+        .map { it.clampTo(-50..50) }
+        .filter { !it.cuboid.isEmpty() }
+    return doReboot(steps)
+}
 
+fun solveB(lines: List<String>): Long {
+    val steps = lines.map { parseLine(it) }
+    return doReboot(steps)
+}
 
-    val instructions = lines.map { parseLine(it) }
-
-//    val (minPoint, maxPoint) = instructions.fold(Point3(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE) to Point3(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)) { (min, max), next ->
-//        val min = Point3(min(min.x, next.x.first), min(min.y, next.y.first), min(min.z, next.z.first))
-//        val max = Point3(max(max.x, next.x.last), max(max.y, next.y.last), max(max.z, next.z.last))
-//        min to max
-//    }
-    val lowerBound = -50 - instructions.size
-    val upperBound = 50 + instructions.size
-    val countRange = -50..50
-//    val instructionRange = -50..50
-//    val range = lowerBound..upperBound
-//    val cubes = IntTrie.create(intArrayOf(lowerBound, lowerBound, lowerBound), intArrayOf(upperBound, upperBound, upperBound))
-    val cubes = mutableSetOf<HyperspacePoint>()
-    instructions
-        .map { it.clampTo(countRange) }
-        .forEach { instruction ->
-            val points = instruction.x.asSequence().cartesianProduct(instruction.y.asSequence()).cartesianProduct(instruction.z.asSequence()) { (x, y), z ->
-                HyperspacePoint.of(x, y, z)
-            }.filter { it.x in countRange && it.y in countRange && it.z in countRange }
-
+private fun doReboot(steps: List<RebootStep>): Long {
+    val turnedOn: List<Cuboid> = steps
+        .fold(emptyList()) { acc, instruction ->
             if (instruction.on) {
-                for (point in points) {
-                    cubes.add(point)
-                }
+                acc + instruction.cuboid
             } else {
-                for (point in points) {
-                    cubes.remove(point)
-                }
+                acc.flatMap { it.subtract(instruction.cuboid) }
             }
         }
 
-    return cubes.count { it.x in countRange && it.y in countRange && it.z in countRange }
+    return deduplicate(turnedOn).sumOf { it.count }
 }
 
-fun parseLine(line: String): RebootInstruction {
+fun deduplicate(cuboids: Collection<Cuboid>): Collection<Cuboid> {
+    val counted = mutableListOf<Cuboid>()
+
+    for (next in cuboids) {
+        val overlaps = counted.asSequence().filter { it.overlaps(next) }
+        val new = overlaps.fold(sequenceOf(next)) { new, existing ->
+            new.flatMap { it.subtract(existing) }
+        }
+        counted.addAll(new)
+    }
+
+    return counted
+}
+
+fun parseLine(line: String): RebootStep {
     val matchResult = pattern.matchEntire(line)!!
     val on = matchResult.groupValues[1] == "on"
     val x = matchResult.groupValues[2].toInt()..matchResult.groupValues[3].toInt()
     val y = matchResult.groupValues[4].toInt()..matchResult.groupValues[5].toInt()
     val z = matchResult.groupValues[6].toInt()..matchResult.groupValues[7].toInt()
-    return RebootInstruction(on, x, y, z)
+    return RebootStep(on, Cuboid(x, y, z))
 }
 
-data class RebootInstruction(val on: Boolean, val x: IntRange, val y: IntRange, val z: IntRange) {
-    fun clampTo(newRange: IntRange): RebootInstruction = RebootInstruction(on, clampRange(x, newRange), clampRange(y, newRange), clampRange(z, newRange))
-
-    private fun clampRange(currentRange: IntRange, newRange: IntRange) = max(currentRange.first, newRange.first)..min(currentRange.last, newRange.last)
+data class RebootStep(val on: Boolean, val cuboid: Cuboid) {
+    fun clampTo(newRange: IntRange): RebootStep = RebootStep(on, cuboid.overlap(Cuboid(newRange, newRange, newRange)))
 }
 
+data class Cuboid(val x: IntRange, val y: IntRange, val z: IntRange) {
 
-fun solveB(lines: List<String>): Int {
-    return 0
+    val count: Long = x.size.toLong() * y.size.toLong() * z.size.toLong()
+
+    fun isEmpty() = x.isEmpty() || y.isEmpty() || z.isEmpty()
+
+    fun overlaps(other: Cuboid): Boolean = overlap(other).count > 0
+    fun overlap(other: Cuboid): Cuboid = Cuboid(overlappingRange(x, other.x), overlappingRange(y, other.y), overlappingRange(z, other.z))
+
+    fun subtract(other: Cuboid): List<Cuboid> {
+        val overlap = overlap(other)
+        return when {
+            overlap.isEmpty() -> listOf(this)
+            overlap == this -> emptyList()
+            else -> {
+                val possibleX = splitRange(x, overlap.x)
+                val possibleY = splitRange(y, overlap.y)
+                val possibleZ = splitRange(z, overlap.z)
+
+                listOf(
+                    Cuboid(x, possibleY.first(), z),
+                    Cuboid(x, possibleY.last(), z),
+                    Cuboid(possibleX.first(), possibleY[1], z),
+                    Cuboid(possibleX.last(), possibleY[1], z),
+                    Cuboid(possibleX[1], possibleY[1], possibleZ.first()),
+                    Cuboid(possibleX[1], possibleY[1], possibleZ.last()),
+                ).filter { !it.isEmpty() }
+            }
+        }
+    }
+
+    private fun splitRange(range: IntRange, overlapRange: IntRange): List<IntRange> {
+        val before = range.first until overlapRange.first
+        val after = overlapRange.last + 1..range.last
+        return listOf(before, overlapRange, after)
+    }
+
+    private fun overlappingRange(first: IntRange, second: IntRange) = max(first.first, second.first)..min(first.last, second.last)
 }
