@@ -1,10 +1,9 @@
 package day22
 
+import helper.size
 import kotlin.math.max
 import kotlin.math.min
 
-private val IntRange.size: Int
-    get() = max(0, last - first + 1)
 val pattern = "(on|off) x=([-0-9]+)..([-0-9]+),y=([-0-9]+)..([-0-9]+),z=([-0-9]+)..([-0-9]+)".toRegex()
 
 fun solveA(lines: List<String>): Long {
@@ -61,7 +60,7 @@ data class RebootStep(val on: Boolean, val cuboid: Cuboid) {
 
 data class Cuboid(val x: IntRange, val y: IntRange, val z: IntRange) {
 
-    val count: Long = x.size.toLong() * y.size.toLong() * z.size.toLong()
+    val count: Long = x.size().toLong() * y.size().toLong() * z.size().toLong()
 
     fun isEmpty() = x.isEmpty() || y.isEmpty() || z.isEmpty()
 

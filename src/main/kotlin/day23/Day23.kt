@@ -1,158 +1,31 @@
 package day23
 
-import helper.point.*
+import helper.point.Point
+import helper.point.get
+import helper.point.set
+import helper.size
 import java.util.*
+import kotlin.math.abs
 
-/*
-Amphipods will never stop on the space immediately outside any room. They can move into that space so long as they immediately continue moving. (Specifically, this refers to the four open spaces in the hallway that are directly above an amphipod starting position.)
-Amphipods will never move from the hallway into a room unless that room is their destination room and that room contains no amphipods which do not also have that room as their own destination.
-Once an amphipod stops moving in the hallway, it will stay in that spot until it can move into a room.
-    (So each amphibot has two turns)
-
-Amber amphipods require 1 energy per step,
-Bronze amphipods require 10 energy
-Copper amphipods require 100
-Desert ones require 1000
- */
 fun solveA(lines: List<String>): Int {
     val grid = lines.map { it.toList() }
 
-    return solve(grid, TargetPositionsA)
+    return solve(grid, 3 downTo 2)
 }
 
-const val hallwayY = 1
-val invalidEnds = setOf(Point(3, hallwayY), Point(5, hallwayY), Point(7, hallwayY), Point(9, hallwayY))
-val movementCost = mapOf('A' to 1, 'B' to 10, 'C' to 100, 'D' to 1000)
+fun solveB(lines: List<String>): Int {
+    val extraLines = listOf("  #D#C#B#A#  ", "  #D#B#A#C#  ")
+    val newLines = lines.subList(0, 3) + extraLines + lines.subList(3, lines.size)
 
-sealed interface TargetPositions {
-    fun hasCorrectPosition(point: Point, grid: Grid, amphi: Char = grid[point]): Boolean
-    fun getReachableEndRoom(grid: Grid, point: Point): Point?
-    fun findPossiblePositionsFromRoom(current: Point, grid: Grid, amphi: Char, wipPath: List<Point> = emptyList()): Sequence<List<Point>>
+    return solve(newLines.map { it.toList() }, 5 downTo 2)
 }
 
-object TargetPositionsA : TargetPositions {
-    private val targetY = listOf(3, 2)
-    private val targetPositions = mapOf(
-        'A' to targetY.map { Point(3, it) },
-        'B' to targetY.map { Point(5, it) },
-        'C' to targetY.map { Point(7, it) },
-        'D' to targetY.map { Point(9, it) },
-    )
-
-    override fun hasCorrectPosition(point: Point, grid: Grid, amphi: Char): Boolean {
-        val targetPositions = targetPositions[amphi]!!
-
-        val innerRoom = targetPositions[0]
-        val outerRoom = targetPositions[1]
-        return point == innerRoom || (point == outerRoom && grid[innerRoom] == amphi)
-    }
-
-    override fun getReachableEndRoom(grid: Grid, point: Point): Point? {
-        val amphi = grid[point]
-        val targetPositions = targetPositions[amphi]!!
-        return if (targetPositions.all { grid[it] == '.' || grid[it] == amphi }) {
-            targetPositions.firstOrNull { grid[it] == '.' }
-        } else {
-            null
-        }
-    }
-
-    private fun canContinueToNeighbour(amphi: Char, current: Point, neighbour: Point, grid: Grid, wipPath: List<Point>): Boolean {
-        val targetPositions = targetPositions[amphi]!!
-        val canMoveToTarget = targetPositions.all { targetPos -> grid[targetPos] == '.' || grid[targetPos] == amphi }
-        return (neighbour.y == hallwayY || current.y > neighbour.y || neighbour in targetPositions && canMoveToTarget)
-                && grid[neighbour] == '.'
-                && neighbour !in wipPath
-    }
-
-    private fun isValidEnd(end: Point, grid: Grid, amphi: Char): Boolean {
-        val roomPosition = targetPositions[amphi]!!.firstOrNull { grid[it] == '.' }
-        return end.y == hallwayY && end !in invalidEnds || end == roomPosition
-    }
-
-    override fun findPossiblePositionsFromRoom(current: Point, grid: Grid, amphi: Char, wipPath: List<Point>): Sequence<List<Point>> {
-        val neighbours = current.neighbours()
-            .filter { canContinueToNeighbour(amphi, current, it, grid, wipPath) }
-
-        val currentPath = wipPath + current
-        return (sequenceOf(currentPath) + neighbours.asSequence().flatMap { findPossiblePositionsFromRoom(it, grid, amphi, currentPath) })
-            .filter { isValidEnd(it.last(), grid, amphi) }
-    }
-
-}
-
-object TargetPositionsB : TargetPositions {
-    private val targetY = listOf(5, 4, 3, 2)
-    private val targetPositions = mapOf(
-        'A' to targetY.map { Point(3, it) },
-        'B' to targetY.map { Point(5, it) },
-        'C' to targetY.map { Point(7, it) },
-        'D' to targetY.map { Point(9, it) },
-    )
-
-    override fun hasCorrectPosition(point: Point, grid: Grid, amphi: Char): Boolean {
-        val targetPositions = targetPositions[amphi]!!
-        val innerRooms = targetPositions.filter { it.y > point.y }
-        val outerRooms = targetPositions.filter { it.y < point.y }
-        return point in targetPositions && innerRooms.all { grid[it] == amphi } && outerRooms.all { grid[it] == amphi || grid[it] == '.' }
-    }
-
-    override fun getReachableEndRoom(grid: Grid, point: Point): Point? {
-        val amphi = grid[point]
-        val targetPositions = targetPositions[amphi]!!
-        return if (targetPositions.all { grid[it] == '.' || grid[it] == amphi }) {
-            targetPositions.firstOrNull { grid[it] == '.' }
-        } else {
-            null
-        }
-    }
-
-    private fun canContinueToNeighbour(amphi: Char, current: Point, neighbour: Point, grid: Grid, wipPath: List<Point>): Boolean {
-        val targetPositions = targetPositions[amphi]!!
-        val canMoveToTarget = targetPositions.all { targetPos -> grid[targetPos] == '.' || grid[targetPos] == amphi }
-        return (neighbour.y == hallwayY || current.y > neighbour.y || neighbour in targetPositions && canMoveToTarget)
-                && grid[neighbour] == '.'
-                && neighbour !in wipPath
-    }
-
-    private fun isValidEnd(end: Point, grid: Grid, amphi: Char): Boolean {
-        val roomPosition = (targetPositions[amphi] ?: emptyList()).firstOrNull { grid[it] == '.' }
-        return end.y == hallwayY && end !in invalidEnds || end == roomPosition
-    }
-
-    override fun findPossiblePositionsFromRoom(current: Point, grid: Grid, amphi: Char, wipPath: List<Point>): Sequence<List<Point>> {
-        val neighbours = current.neighbours()
-            .filter { canContinueToNeighbour(amphi, current, it, grid, wipPath) }
-
-        val currentPath = wipPath + current
-        return (sequenceOf(currentPath) + neighbours.asSequence().flatMap { findPossiblePositionsFromRoom(it, grid, amphi, currentPath) })
-            .filter { isValidEnd(it.last(), grid, amphi) }
-    }
-}
-
-
-class Grid(private val targetPositions: TargetPositions, private val cells: List<List<Char>>) : List<List<Char>> by cells {
-    override fun toString(): String = cells.joinToString(separator = "\n") { it.joinToString(separator = "") } + "\n\nUnsolved = $unsolvedScore"
-
-    override fun equals(other: Any?): Boolean = this === other || other is Grid && cells == other.cells
-    override fun hashCode(): Int = cells.hashCode()
-
-    val amphipodPositions = cells.points().filter { cells[it] in setOf('A', 'B', 'C', 'D') }
-
-    val unsolvedScore by lazy {
-        points()
-            .filter { this[it] in setOf('A', 'B', 'C', 'D') && !targetPositions.hasCorrectPosition(it, this) }
-            .sumOf { movementCost[this[it]]!! }
-    }
-
-    fun isSolved() = amphipodPositions.all { targetPositions.hasCorrectPosition(it, this) }
-}
-
-fun solve(startingGrid: List<List<Char>>, targetPositions: TargetPositions): Int {
+fun solve(startingGrid: List<List<Char>>, roomsYRange: IntProgression): Int {
     val seenStates = mutableMapOf<Grid, Int>()
-
-    val queue: PriorityQueue<Pair<Grid, Int>> = PriorityQueue(Comparator.comparing { (grid, cost) -> cost + grid.unsolvedScore })
-    queue.add(Pair(Grid(targetPositions, startingGrid), 0))
+    val gridDimensions = GridDimensions(roomsYRange)
+    val comparator: Comparator<Pair<Grid, Int>> = Comparator.comparing { (_, cost) -> cost }
+    val queue = PriorityQueue(comparator)
+    queue.add(Pair(Grid(gridDimensions, startingGrid), 0))
 
     while (queue.isNotEmpty()) {
         val (grid, cumulativeCost) = queue.remove()
@@ -161,39 +34,12 @@ fun solve(startingGrid: List<List<Char>>, targetPositions: TargetPositions): Int
             return cumulativeCost
         } else if (grid !in seenStates) {
             seenStates[grid] = cumulativeCost
+            val possibleMoves = grid.nextMoves()
 
-            val canMoveOut = grid.amphipodPositions
-                .asSequence()
-                .filter { it.y != hallwayY && !targetPositions.hasCorrectPosition(it, grid) }
-                .flatMap { targetPositions.findPossiblePositionsFromRoom(it, grid, amphi = grid[it]) }
-                .filter { paths -> paths.isNotEmpty() }
-                .map { steps -> buildPossiblePath(grid, steps) }
-                .toList()
-
-            val canMoveIn = grid.amphipodPositions.asSequence()
-                .filter { !targetPositions.hasCorrectPosition(it, grid) }
-                .mapNotNull { start ->
-                    val target = targetPositions.getReachableEndRoom(grid, start)
-                    if (target == null) {
-                        null
-                    } else {
-                        val stepCount = stepCountToTargetPosition(start, grid, target)
-                        if (stepCount == null) {
-                            null
-                        } else {
-                            val amphi = grid[start]
-                            PossiblePath(amphi, start, target, stepCount * movementCost[amphi]!!)
-                        }
-                    }
-                }.toList()
-
-            val nextGrids = (canMoveIn + canMoveOut)
+            val nextGrids = possibleMoves
+                .map { Pair(grid.applyPath(it), it.cost + cumulativeCost) }
+                .filter { (newGrid, _) -> newGrid !in seenStates }
                 .toSet()
-                .map {
-                    Pair(newGrid(it, grid, targetPositions), it.cost + cumulativeCost)
-                }.filter { (newGrid, _) ->
-                    newGrid !in seenStates
-                }
 
             queue.addAll(nextGrids)
         }
@@ -202,42 +48,117 @@ fun solve(startingGrid: List<List<Char>>, targetPositions: TargetPositions): Int
     throw IllegalStateException("No solution found")
 }
 
-fun newGrid(path: PossiblePath, grid: List<List<Char>>, targetPositions: TargetPositions): Grid {
-    val newGrid = grid.map { it.toMutableList() }
-    newGrid[path.first] = '.'
-    newGrid[path.last] = path.amphi
-    return Grid(targetPositions, newGrid)
+const val hallwayY = 1
+val xRange = 1..11
+val invalidEnds = setOf(Point(3, hallwayY), Point(5, hallwayY), Point(7, hallwayY), Point(9, hallwayY))
+val movementCost = mapOf('A' to 1, 'B' to 10, 'C' to 100, 'D' to 1000)
+val amphipodNames = setOf('A', 'B', 'C', 'D')
+
+class GridDimensions(roomsY: IntProgression) {
+    val targetRooms = mapOf(
+        'A' to roomsY.map { Point(3, it) },
+        'B' to roomsY.map { Point(5, it) },
+        'C' to roomsY.map { Point(7, it) },
+        'D' to roomsY.map { Point(9, it) },
+    )
+    val possiblePoints = targetRooms.values.flatten() + xRange.map { Point(it, hallwayY) }
 }
 
-private fun buildPossiblePath(grid: Grid, steps: List<Point>): PossiblePath {
-    val amphi = grid[steps.first()]
-    return PossiblePath(amphi, steps.first(), steps.last(), (steps.size - 1) * movementCost[amphi]!!)
+data class Path(val amphi: Char, val first: Point, val last: Point, val stepCount: Int) {
+    val cost = movementCost[amphi]!! * stepCount
 }
 
-fun stepCountToTargetPosition(start: Point, grid: Grid, targetRoom: Point): Int? {
-    val seen = mutableMapOf(start to 0)
-    val queue = PriorityQueue<Pair<Point, Int>>(Comparator.comparing { (_, second) -> second })
-    queue.add(start to 0)
-    while (queue.isNotEmpty() && !seen.containsKey(targetRoom)) {
-        val (next, stepCount) = queue.remove()
-        seen[next] = stepCount
+class Grid(private val gridDimensions: GridDimensions, val cells: List<List<Char>>) {
+    private val hashCode = cells.hashCode()
+    private val amphipodPositions = calcAmphipodPositions()
 
-        val neighbours = next.neighbours()
-            .filter { it in grid && grid[it] == '.' && it !in seen }
-            .map { it to stepCount + 1 }
-        queue.addAll(neighbours)
+    private fun calcAmphipodPositions() = gridDimensions.possiblePoints.filter { cells[it] in amphipodNames }
+    operator fun get(point: Point): Char = cells[point]
+
+    fun isSolved() = amphipodPositions.all { isCorrect(it) }
+
+    override fun toString(): String = cells.joinToString(separator = "\n") { it.joinToString(separator = "") }
+    override fun equals(other: Any?): Boolean = this === other || other is Grid && cells == other.cells
+    override fun hashCode(): Int = hashCode
+
+    fun applyPath(path: Path): Grid {
+        val newGrid = cells.map { it.toMutableList() }
+        newGrid[path.first] = '.'
+        newGrid[path.last] = path.amphi
+        return Grid(gridDimensions, newGrid)
     }
 
-    return seen[targetRoom]
-}
+    fun nextMoves() = pathsToTargets().take(1).ifEmpty { pathsToHallway() }
+
+    private fun pathsToTargets() = amphipodPositions
+        .asSequence()
+        .filter { !isCorrect(it) }
+        .mapNotNull { calculatePathToEnd(it) }
+
+    private fun pathsToHallway() = amphipodPositions
+        .asSequence()
+        .filter { it.y != hallwayY && !isCorrect(it) }
+        .flatMap { pathsToHallway(it) }
+
+    private fun isCorrect(point: Point): Boolean {
+        val amphi = this[point]
+        val endPositions = gridDimensions.targetRooms[amphi]!!
+        val innerRooms = endPositions.filter { it.y > point.y }
+        return point in endPositions && innerRooms.all { this[it] == amphi }
+    }
 
 
-data class PossiblePath(val amphi: Char, val first: Point, val last: Point, val cost: Int)
+    private fun pathsToHallway(start: Point): List<Path> {
+        val hallwayPosition = Point(start.x, hallwayY)
+        val firstSegment = calculatePath(start, hallwayPosition)
 
-fun solveB(lines: List<String>): Int {
-    val extraLines = listOf("  #D#C#B#A#  ", "  #D#B#A#C#  ")
-    val newLines = lines.subList(0, 3) + extraLines + lines.subList(3, lines.size)
+        val leftX = hallwayPosition.x - 1 downTo xRange.first
+        val rightX = hallwayPosition.x + 1..xRange.last
 
-    return solve(newLines.map { it.toList() }, TargetPositionsB)
+        return if (firstSegment != null) {
+            buildList {
+                addAll(hallwayPaths(leftX, firstSegment))
+                addAll(hallwayPaths(rightX, firstSegment))
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+    private fun hallwayPaths(xRange: IntProgression, firstSegment: Path) = xRange.asSequence()
+        .map { x -> Point(x, hallwayY) }
+        .filter { it !in invalidEnds }
+        .takeWhile { this[it] == '.' }
+        .map { Path(firstSegment.amphi, firstSegment.first, it, firstSegment.stepCount + abs(it.x - firstSegment.first.x)) }
+
+    private fun calculatePathToEnd(start: Point) = getOpenEndRoom(start)?.let { end -> calculatePath(start, end) }
+    private fun calculatePath(start: Point, end: Point): Path? {
+        val hallway = if (start.x < end.x) start.x + 1..end.x else end.x until start.x
+        val endColumn = (hallwayY + 1)..end.y
+        val startColumn = hallwayY until start.y
+
+        val hallwayClear = hallway.all { this[Point(it, hallwayY)] == '.' }
+        val endColumClear = endColumn.all { this[Point(end.x, it)] == '.' }
+        val startColumClear = startColumn.all { this[Point(start.x, it)] == '.' }
+
+        val count = startColumn.size() + hallway.size() + endColumn.size()
+
+        return if (hallwayClear && endColumClear && startColumClear) {
+            Path(this[start], start, end, count)
+        } else {
+            null
+        }
+    }
+
+    private fun getOpenEndRoom(point: Point): Point? {
+        val amphi = this[point]
+        val targetPositions = gridDimensions.targetRooms[amphi]!!
+        return if (targetPositions.all { this[it] == '.' || this[it] == amphi }) {
+            targetPositions.firstOrNull { this[it] == '.' }
+        } else {
+            null
+        }
+    }
+
 }
 

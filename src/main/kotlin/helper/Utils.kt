@@ -2,6 +2,7 @@ package helper
 
 import java.util.concurrent.BlockingQueue
 import kotlin.math.absoluteValue
+import kotlin.math.max
 import kotlin.math.pow
 
 fun Int.toBinaryDigits(bitLength: Int): List<Int> = (bitLength - 1 downTo 0).map { bit ->
@@ -13,6 +14,7 @@ fun Int.toBinaryDigits(bitLength: Int): List<Int> = (bitLength - 1 downTo 0).map
 
 fun Int.pow(n: Int) = this.toDouble().pow(n).toInt()
 
+fun IntRange.size(): Int = max(0, last - first + 1)
 fun Iterable<Long>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.product() = reduce { acc, item -> acc * item }
 fun Iterable<Int>.digitsToInt(radix: Int) = reduce { acc, digit -> acc * radix + digit }
