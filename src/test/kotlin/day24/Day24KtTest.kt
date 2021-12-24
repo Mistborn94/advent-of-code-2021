@@ -24,11 +24,10 @@ internal class Day24KtTest {
         val (a, b, c) = extractAbc(lastChunk)
 
         for (digit in 1..9) {
-            val targetZs = solvePreviousZ(0L, digit, a, b, c)
-            println("Targets found for digit $digit: ${targetZs}")
-            targetZs.forEach {
-                assertEquals(0, runOnceShort(lastChunk, digit, it))
-            }
+            val targetZ = solvePreviousZ(0L, digit, a, b, c)
+            println("Targets found for digit $digit: ${targetZ}")
+
+            assertEquals(0, runOnceShort(lastChunk, digit, targetZ!!))
         }
     }
 

@@ -42,35 +42,36 @@ fun runFormula(z: Long, digit: Int, a: Int, b: Int, c: Int): Long {
     }
 }
 
-fun solvePreviousZ(nz: Long, digit: Int, a: Int, b: Int, c: Int): List<Long> {
+fun solvePreviousZ(nz: Long, digit: Int, a: Int, b: Int, c: Int): Long? {
     return when (a) {
         1 -> {
-            val possibleZs = mutableListOf<Long>()
-            //formula if part
             if (calcMod(nz, b) == digit) {
-                possibleZs.add(nz)
+                nz
+            } else {
+                val component = (nz - digit - c)
+                if ((component % 26) == 0L) {
+                    component / 26
+                } else {
+                    null
+                }
             }
-            //formula else part
-            val component = (nz - digit - c)
-            if ((component % 26) == 0L) {
-                possibleZs.add(component / 26)
-            }
-            possibleZs
         }
         26 -> {
-            val possibleZs = mutableListOf<Long>()
-            //formula if part
             val range = 26 * nz until 26 * (nz + 1)
-            possibleZs.addAll(range.filter { calcMod(it, b) == digit })
-            //formula else part
-            val component = nz - digit - c
-            if (component % 26 == 0L) {
-                possibleZs.add(nz - digit - c)
+            val firstOrNull = range.firstOrNull { calcMod(it, b) == digit }
+            if (firstOrNull != null) {
+                firstOrNull
+            } else {
+                val component = nz - digit - c
+                if (component % 26 == 0L) {
+                    nz - digit - c
+                } else {
+                    null
+                }
             }
-            possibleZs
         }
         else -> {
-            throw IllegalStateException("Bad assumptions got made")
+            throw IllegalStateException("This is impossible with my input")
         }
     }
 }
@@ -86,17 +87,17 @@ private fun solve(lines: List<String>): List<Long> {
     val chunked = lines.chunked(18)
     val abcs = chunked.map { chunk -> extractAbc(chunk) }
 
-    val lastDigitPossibles = digitRange.flatMap { digit ->
+    val lastDigitPossibles = digitRange.mapNotNull { digit ->
         val (a, b, c) = abcs.last()
-        solvePreviousZ(0L, digit, a, b, c).map { it to digit.toLong() }
+        solvePreviousZ(0L, digit, a, b, c)?.let { it to digit.toLong() }
     }
     val results = abcs.reversed().drop(1).foldIndexed(lastDigitPossibles) { i, acc, (a, b, c) ->
         val power10 = 10.0.pow(i + 1).toLong()
         acc.cartesianProduct(digitRange) { (nz, number), digit ->
             val possibleZs = solvePreviousZ(nz, digit, a, b, c)
             val newNumber = power10 * digit + number
-            possibleZs.map { it to newNumber }
-        }.flatten()
+            possibleZs?.let { it to newNumber }
+        }.filterNotNull()
     }.filter { (nz, _) -> nz == 0L }
         .map { (_, num) -> num }
     return results
