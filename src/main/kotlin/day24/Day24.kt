@@ -4,23 +4,22 @@ import helper.cartesianProduct
 import java.util.*
 import kotlin.math.pow
 
-fun runShort(lines: List<String>, inputDigit: Int, initialZ: Long = 0L): Long {
+fun runFormula(lines: List<String>, serialNumber: String, initialZ: Long = 0L): Long {
     val chunked = lines.chunked(18)
     val abcs = chunked.map { chunk -> extractAbc(chunk) }
 
-    return abcs.fold(initialZ) { z, (a, b, c) -> runFormula(z, inputDigit, a, b, c) }
+    return abcs.foldIndexed(initialZ) { i, z, (a, b, c) -> runFormula(z, serialNumber[i].digitToInt(), a, b, c) }
 }
 
-fun runLong(lines: List<String>, inputDigit: Int): Long {
+fun runSimulation(lines: List<String>, serialNumber: String): Long {
     val instructions = lines.map { Instruction.parse(it) }
     val alu = Alu()
-    repeat(14) {
-        alu.supplyInput(inputDigit)
-    }
+    serialNumber.forEach { alu.supplyInput(it.digitToInt()) }
     alu.runAll(instructions)
     return alu.read(3)
 }
 
+//Extract input values from a chunk of 18 instructions
 fun extractAbc(chunk: List<String>): Triple<Int, Int, Int> {
     val a = chunk[4].split(" ")[2].toInt()
     val b = chunk[5].split(" ")[2].toInt()
@@ -28,6 +27,7 @@ fun extractAbc(chunk: List<String>): Triple<Int, Int, Int> {
     return Triple(a, b, c)
 }
 
+//Formula derived from analyzing repeated instructions in the input
 fun runFormula(z: Long, digit: Int, a: Int, b: Int, c: Int): Long {
     return if ((z % 26).toInt() == digit - b) {
         z / a
@@ -36,14 +36,17 @@ fun runFormula(z: Long, digit: Int, a: Int, b: Int, c: Int): Long {
     }
 }
 
-fun solvePreviousZ(nz: Long, digit: Int, a: Int, b: Int, c: Int): List<Long> {
+//Inverting the above formula to solve Z backwards
+fun solvePreviousZ(n: Long, digit: Int, a: Int, b: Int, c: Int): List<Long> {
     return when (a) {
         1 -> {
             buildList {
-                if ((nz % 26).toInt() == digit - b) {
-                    add(nz)
+                //if (z % 26 == digit - b): n = z
+                //else: n = z * 26 + digit + c
+                if ((n % 26).toInt() == digit - b) {
+                    add(n)
                 } else {
-                    val component = (nz - digit - c)
+                    val component = (n - digit - c)
                     if ((component % 26) == 0L) {
                         add(component / 26)
                     }
@@ -51,50 +54,45 @@ fun solvePreviousZ(nz: Long, digit: Int, a: Int, b: Int, c: Int): List<Long> {
             }
         }
         26 -> {
+            //if (z % 26 == digit - b): n = z / 26
+            //else: n = z / 26 * 26 + digit + c
             buildList {
-                add(26 * nz + digit - b)
-                val component = nz - digit - c
+                //There is always a number that can solve z for the first if statement
+                //Because of integer division, any z from 26n to 26n + 25 satisfies n = z / 26
+                //Of those, we can easily find the one that satisfies z % 26 == digit - b
+                //The smallest observed value for b is -16, so there are no cases where (digit - b) > 25
+                add(26 * n + digit - b)
+                //Even if I remove this second part, the tests still works. Not entirely sure if that is luck or not.
+                // We can eliminate the / 26 * 26 part, but because of integer division we have to make sure that (n - digit - c) is divisible by 26
+                val component = n - digit - c
                 if (component % 26 == 0L) {
                     add(component)
                 }
             }
         }
         else -> {
-            throw IllegalStateException("This is impossible with my input")
+            throw UnsupportedOperationException("This is impossible with my input")
         }
     }
 }
 
-fun solveA(lines: List<String>): Long {
-    val results = solve(lines)
-    return results.maxOf { it }
-}
+fun solveA(lines: List<String>): Long = solve(lines, 9 downTo 1)
 
-private fun solve(lines: List<String>): List<Long> {
+fun solveB(lines: List<String>): Long = solve(lines, 1..9)
+
+private fun solve(lines: List<String>, digitRange: IntProgression): Long {
     val chunked = lines.chunked(18)
-    val abcs = chunked.map { chunk -> extractAbc(chunk) }
+    val instructionValues = chunked.map { chunk -> extractAbc(chunk) }
 
-    val lastDigitPossibles: List<Pair<Long, Long>> = digitRange.flatMap { digit ->
-        val (a, b, c) = abcs.last()
-        solvePreviousZ(0L, digit, a, b, c).map { it to digit.toLong() }
-    }
-    val results = abcs.reversed().drop(1).foldIndexed(lastDigitPossibles) { i, acc, (a, b, c) ->
-        val power10 = 10.0.pow(i + 1).toLong()
-        acc.cartesianProduct(digitRange) { (nz, number), digit ->
-            val possibleZs = solvePreviousZ(nz, digit, a, b, c)
+    return instructionValues.foldRightIndexed(sequenceOf(Pair(0L, 0L))) { i, (a, b, c), acc ->
+        val power10 = 10.0.pow(13 - i).toLong()
+        acc.cartesianProduct(digitRange.asSequence()) { (nz, number), digit ->
             val newNumber = power10 * digit + number
-            possibleZs.map { it to newNumber }
+            solvePreviousZ(nz, digit, a, b, c).map { it to newNumber }
         }.flatten()
     }.filter { (nz, _) -> nz == 0L }
         .map { (_, num) -> num }
-    return results
-}
-
-val digitRange = 9 downTo 1
-
-fun solveB(lines: List<String>): Long {
-    val results = solve(lines)
-    return results.minOf { it }
+        .first()
 }
 
 class Alu(private val values: LongArray = LongArray(4) { 0 }) {
@@ -116,8 +114,6 @@ class Alu(private val values: LongArray = LongArray(4) { 0 }) {
     fun writeInput(index: Int) {
         values[index] = inputQueue.remove().toLong()
     }
-
-    fun copy(): Alu = Alu(values.copyOf())
 }
 
 sealed class Instruction(val name: String) {

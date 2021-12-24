@@ -3,6 +3,7 @@ package day24
 import helper.readDayFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 internal class Day24KtTest {
 
@@ -13,7 +14,8 @@ internal class Day24KtTest {
         val lines = readDayFile(day, "input").readText().trim().lines()
 
         for (digit in 1..9) {
-            assertEquals(runLong(lines, digit), runShort(lines, digit), "Result must be equal for digit $digit")
+            val serialNumber = "$digit".repeat(14)
+            assertEquals(runSimulation(lines, serialNumber), runFormula(lines, serialNumber), "Result must be equal for digit $digit")
         }
     }
 
@@ -25,7 +27,10 @@ internal class Day24KtTest {
 
         for (digit in 1..9) {
             val targetZ = solvePreviousZ(0L, digit, a, b, c)
-            assertEquals(0, runShort(lastChunk, digit, targetZ.first()))
+            assertFalse(targetZ.isEmpty())
+            targetZ.forEach {
+                assertEquals(0, runFormula(lastChunk, digit.toString(), it))
+            }
         }
     }
 
