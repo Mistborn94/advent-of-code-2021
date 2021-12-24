@@ -4,14 +4,14 @@ import helper.cartesianProduct
 import java.util.*
 import kotlin.math.pow
 
-fun runOnceShort(lines: List<String>, inputDigit: Int, initialZ: Long = 0L): Long {
+fun runShort(lines: List<String>, inputDigit: Int, initialZ: Long = 0L): Long {
     val chunked = lines.chunked(18)
     val abcs = chunked.map { chunk -> extractAbc(chunk) }
 
     return abcs.fold(initialZ) { z, (a, b, c) -> runFormula(z, inputDigit, a, b, c) }
 }
 
-fun runOnceLong(lines: List<String>, inputDigit: Int): Long {
+fun runLong(lines: List<String>, inputDigit: Int): Long {
     val instructions = lines.map { Instruction.parse(it) }
     val alu = Alu()
     repeat(14) {
@@ -28,45 +28,34 @@ fun extractAbc(chunk: List<String>): Triple<Int, Int, Int> {
     return Triple(a, b, c)
 }
 
-//Can we reverse this? Solve for input z, having a known a,b,c,digit
 fun runFormula(z: Long, digit: Int, a: Int, b: Int, c: Int): Long {
-
-    return if (calcMod(z, b) == digit) {
-        //How can z be 0?
-        // -> z is already 0
+    return if ((z % 26).toInt() == digit - b) {
         z / a
     } else {
-        //How can z be 0?
-        // -> first = -second
         (z / a * 26) + digit + c
     }
 }
 
-fun solvePreviousZ(nz: Long, digit: Int, a: Int, b: Int, c: Int): Long? {
+fun solvePreviousZ(nz: Long, digit: Int, a: Int, b: Int, c: Int): List<Long> {
     return when (a) {
         1 -> {
-            if (calcMod(nz, b) == digit) {
-                nz
-            } else {
-                val component = (nz - digit - c)
-                if ((component % 26) == 0L) {
-                    component / 26
+            buildList {
+                if ((nz % 26).toInt() == digit - b) {
+                    add(nz)
                 } else {
-                    null
+                    val component = (nz - digit - c)
+                    if ((component % 26) == 0L) {
+                        add(component / 26)
+                    }
                 }
             }
         }
         26 -> {
-            val range = 26 * nz until 26 * (nz + 1)
-            val firstOrNull = range.firstOrNull { calcMod(it, b) == digit }
-            if (firstOrNull != null) {
-                firstOrNull
-            } else {
+            buildList {
+                add(26 * nz + digit - b)
                 val component = nz - digit - c
                 if (component % 26 == 0L) {
-                    nz - digit - c
-                } else {
-                    null
+                    add(component)
                 }
             }
         }
@@ -75,8 +64,6 @@ fun solvePreviousZ(nz: Long, digit: Int, a: Int, b: Int, c: Int): Long? {
         }
     }
 }
-
-private fun calcMod(nz: Long, b: Int) = (nz % 26 + b).toInt()
 
 fun solveA(lines: List<String>): Long {
     val results = solve(lines)
@@ -87,17 +74,17 @@ private fun solve(lines: List<String>): List<Long> {
     val chunked = lines.chunked(18)
     val abcs = chunked.map { chunk -> extractAbc(chunk) }
 
-    val lastDigitPossibles = digitRange.mapNotNull { digit ->
+    val lastDigitPossibles: List<Pair<Long, Long>> = digitRange.flatMap { digit ->
         val (a, b, c) = abcs.last()
-        solvePreviousZ(0L, digit, a, b, c)?.let { it to digit.toLong() }
+        solvePreviousZ(0L, digit, a, b, c).map { it to digit.toLong() }
     }
     val results = abcs.reversed().drop(1).foldIndexed(lastDigitPossibles) { i, acc, (a, b, c) ->
         val power10 = 10.0.pow(i + 1).toLong()
         acc.cartesianProduct(digitRange) { (nz, number), digit ->
             val possibleZs = solvePreviousZ(nz, digit, a, b, c)
             val newNumber = power10 * digit + number
-            possibleZs?.let { it to newNumber }
-        }.filterNotNull()
+            possibleZs.map { it to newNumber }
+        }.flatten()
     }.filter { (nz, _) -> nz == 0L }
         .map { (_, num) -> num }
     return results
