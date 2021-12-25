@@ -28,7 +28,7 @@ private fun doReboot(steps: List<RebootStep>): Long {
             }
         }
 
-    return deduplicate(turnedOn).sumOf { it.count }
+    return deduplicate(turnedOn).sumOf { it.volume }
 }
 
 fun deduplicate(cuboids: Collection<Cuboid>): Collection<Cuboid> {
@@ -60,11 +60,11 @@ data class RebootStep(val on: Boolean, val cuboid: Cuboid) {
 
 data class Cuboid(val x: IntRange, val y: IntRange, val z: IntRange) {
 
-    val count: Long = x.size().toLong() * y.size().toLong() * z.size().toLong()
+    val volume: Long = x.size().toLong() * y.size().toLong() * z.size().toLong()
 
     fun isEmpty() = x.isEmpty() || y.isEmpty() || z.isEmpty()
 
-    fun overlaps(other: Cuboid): Boolean = overlap(other).count > 0
+    fun overlaps(other: Cuboid): Boolean = overlap(other).volume > 0
     fun overlap(other: Cuboid): Cuboid = Cuboid(overlappingRange(x, other.x), overlappingRange(y, other.y), overlappingRange(z, other.z))
 
     fun subtract(other: Cuboid): List<Cuboid> {

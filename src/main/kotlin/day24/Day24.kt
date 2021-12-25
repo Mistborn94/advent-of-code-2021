@@ -8,7 +8,7 @@ fun runFormula(lines: List<String>, serialNumber: String, initialZ: Long = 0L): 
     val chunked = lines.chunked(18)
     val abcs = chunked.map { chunk -> extractAbc(chunk) }
 
-    return abcs.foldIndexed(initialZ) { i, z, (a, b, c) -> runFormula(z, serialNumber[i].digitToInt(), a, b, c) }
+    return abcs.foldIndexed(initialZ) { i, z, (a, b, c) -> calculateNextZ(z, serialNumber[i].digitToInt(), a, b, c) }
 }
 
 fun runSimulation(lines: List<String>, serialNumber: String): Long {
@@ -28,7 +28,7 @@ fun extractAbc(chunk: List<String>): Triple<Int, Int, Int> {
 }
 
 //Formula derived from analyzing repeated instructions in the input
-fun runFormula(z: Long, digit: Int, a: Int, b: Int, c: Int): Long {
+fun calculateNextZ(z: Long, digit: Int, a: Int, b: Int, c: Int): Long {
     return if ((z % 26).toInt() == digit - b) {
         z / a
     } else {

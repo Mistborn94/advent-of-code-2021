@@ -35,6 +35,21 @@ internal class Day24KtTest {
     }
 
     @Test
+    fun solvePreviousZ() {
+        val zValsA = solvePreviousZ(15, 9, 26, -6, 6)
+        assertEquals(zValsA.size, 2)
+        zValsA.forEach {
+            assertEquals(15, calculateNextZ(it, 9, 26, -6, 6))
+        }
+
+        val zValsB = solvePreviousZ(274369, 3, 26, -1, 14)
+        assertEquals(zValsB.size, 2)
+        zValsB.forEach {
+            assertEquals(274369, calculateNextZ(it, 3, 26, -1, 14))
+        }
+    }
+
+    @Test
     fun solve() {
         val lines = readDayFile(day, "input").readText().trim().lines()
 
